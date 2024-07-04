@@ -34,4 +34,6 @@ Options:
   -V, --version                Print version
 ```
 
+Download the latest Linux binary from [the latest release page](https://github.com/johanthoren/check_jitter/releases/latest).
+
 Use together with NRPE or similar, preferably with [Opsview](https://www.itrsgroup.com/products/infrastructure-monitoring).
