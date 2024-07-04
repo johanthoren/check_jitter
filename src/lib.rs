@@ -250,15 +250,29 @@ pub fn get_jitter(
 
 pub fn evaluate_thresholds(jitter: f64, thresholds: &Thresholds) -> Status {
     if let Some(c) = thresholds.critical {
+        debug!("Checking critical threshold: {:?}", c);
         if c.check(jitter) {
+            debug!("Jitter is critical: {:?}", jitter);
             return Status::Critical(jitter, thresholds);
+        } else {
+            debug!("Jitter is not critical: {:?}", jitter);
         }
+    } else {
+        debug!("No critical threshold provided");
     }
+
     if let Some(w) = thresholds.warning {
+        debug!("Checking warning threshold: {:?}", w);
         if w.check(jitter) {
+            debug!("Jitter is warning: {:?}", jitter);
             return Status::Warning(jitter, thresholds);
+        } else {
+            debug!("Jitter is not warning: {:?}", jitter);
         }
+    } else {
+        debug!("No warning threshold provided");
     }
+
     Status::Ok(jitter, thresholds)
 }
 
