@@ -1,0 +1,11 @@
+[licenses]
+allow = [
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "ISC",
+    "MIT",
+    "Unicode-DFS-2016",
+]
+
+[advisories]
+"unmaintained" = "allow"
