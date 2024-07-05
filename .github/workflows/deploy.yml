@@ -6,6 +6,9 @@ on:
 
 name: Publish Crate
 
+permissions:
+  contents: write
+
 jobs:
   test:
     name: Run Cargo Tests
