@@ -22,7 +22,9 @@ jobs:
             archive: tar.gz tar.xz tar.zst
     steps:
       - uses: actions/checkout@master
+
       - run: rm .cargo/config
+
       - name: Compile and release
         uses: rust-build/rust-build.action@v1.4.5
         env:
