@@ -6,7 +6,13 @@ use std::process;
 use std::time::Duration;
 
 const ABOUT_TEXT: &str = r#"
-A Nagios compatible plugin that measures network jitter.
+check_jitter: A Nagios compatible plugin that measures network jitter.
+
+When -m and -M are set to the same value, the plugin will send pings at a fixed
+interval.
+
+When -m and -M are set to different values, the plugin will send pings at random
+intervals between the two values.
 
 Thresholds are defined using Nagios range syntax. Examples:
 +------------------+-------------------------------------------------+
