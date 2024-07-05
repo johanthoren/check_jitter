@@ -56,8 +56,4 @@ jobs:
           CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
 
       - name: Create GH Release
-        run: |
-          gh release create ${{ github.ref }} --title "${{ github.ref }}"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REF: ${{ github.ref }}
+        uses: softprops/action-gh-release@v2
