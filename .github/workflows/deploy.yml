@@ -1,4 +1,3 @@
----
 on:
   push:
     tags:
@@ -53,22 +52,5 @@ jobs:
         env:
           CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
 
-  create_release:
-    runs-on: ubuntu-latest
-    needs:
-      - publish
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: ${{ github.ref }}
-          draft: false
-          prerelease: true
-...
+      - name: Create GH Release
+        uses: softprops/action-gh-release@v2
