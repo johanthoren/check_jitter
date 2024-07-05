@@ -94,7 +94,7 @@ fn display_string(status: &str, uom: &str, f: f64, t: &Thresholds) -> String {
         (Some(w), Some(c)) => {
             format!("{status} - {label}: {f}{uom}|'{label}'={f}{uom};{w};{c}")
         }
-        (Some(w), None) => format!("{status} - {label}: {f}{uom}|'{label}'={f}{uom};{w};"),
+        (Some(w), None) => format!("{status} - {label}: {f}{uom}|'{label}'={f}{uom};{w}"),
         (None, Some(c)) => format!("{status} - {label}: {f}{uom}|'{label}'={f}{uom};;{c}"),
         (None, None) => format!("{status} - {label}: {f}{uom}"),
     }
