@@ -304,11 +304,8 @@ fn round_jitter(j: f64, precision: u8) -> Result<f64, CheckJitterError> {
 /// use check_jitter::{get_jitter, CheckJitterError};
 /// use std::time::Duration;
 ///
-/// fn main() -> Result<(), CheckJitterError> {
-///    let jitter = get_jitter("192.168.1.1", 10, Duration::from_secs(1), 3, 10, 100)?;
-///    println!("Average jitter: {}ms", jitter);
-///    Ok(())
-/// }
+/// let jitter = get_jitter("192.168.1.1", 10, Duration::from_secs(1), 3, 10, 100).unwrap();
+/// println!("Average jitter: {}ms", jitter);
 /// ```
 pub fn get_jitter(
     addr: &str,
@@ -343,21 +340,19 @@ pub fn get_jitter(
 /// use nagios_range::NagiosRange;
 /// use std::time::Duration;
 ///
-/// fn main() {
-///    let jitter = 0.1;
-///    let thresholds = Thresholds {
-///        warning: Some(NagiosRange::from("0:0.5").unwrap()),
-///        critical: Some(NagiosRange::from("0:1").unwrap()),
-///    };
+/// let jitter = 0.1;
+/// let thresholds = Thresholds {
+///     warning: Some(NagiosRange::from("0:0.5").unwrap()),
+///     critical: Some(NagiosRange::from("0:1").unwrap()),
+/// };
 ///
-///    let status = evaluate_thresholds(jitter, &thresholds);
+/// let status = evaluate_thresholds(jitter, &thresholds);
 ///
-///    match status {
-///        Status::Ok(_, _) => println!("Jitter is OK"),
-///        Status::Warning(_, _) => println!("Jitter is warning"),
-///        Status::Critical(_, _) => println!("Jitter is critical"),
-///        Status::Unknown(_) => println!("Unknown status"),
-///    }
+/// match status {
+///     Status::Ok(_, _) => println!("Jitter is OK"),
+///     Status::Warning(_, _) => println!("Jitter is warning"),
+///     Status::Critical(_, _) => println!("Jitter is critical"),
+///     Status::Unknown(_) => println!("Unknown status"),
 /// }
 /// ```
 pub fn evaluate_thresholds(jitter: f64, thresholds: &Thresholds) -> Status {
