@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@master
 
-      - run: rm .cargo/config
+      - run: rm .cargo/config.toml
 
       - name: Compile and release
         uses: rust-build/rust-build.action@v1.4.5
