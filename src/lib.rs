@@ -30,20 +30,20 @@ pub enum CheckJitterError {
     #[error("DNS Lookup failed for: {0}")]
     DnsLookupFailed(String),
 
+    #[error("Invalid IP: {0}")]
+    InvalidIP(String),
+
     #[error("Ping failed because of insufficient permissions")]
     PermissionDenied,
 
-    #[error("Ping timed out after: {0}ms")]
-    Timeout(String),
+    #[error("Ping failed with error: {0}")]
+    PingError(PingErrorWrapper),
 
     #[error("Ping failed with IO error: {0}")]
     PingIoError(String),
 
-    #[error("Invalid IP: {0}")]
-    InvalidIP(String),
-
-    #[error("Ping failed with error: {0}")]
-    PingError(PingErrorWrapper),
+    #[error("Ping timed out after: {0}ms")]
+    Timeout(String),
 
     #[error("Unable to parse host: {0}")]
     UrlParseError(url::ParseError),
