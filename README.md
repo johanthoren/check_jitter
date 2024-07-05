@@ -44,9 +44,11 @@ Options:
 
 ## Installation
 
-Download the latest Linux binary from [the latest release page](https://github.com/johanthoren/check_jitter/releases/latest).
+Download the latest Linux or Windows binary from [the latest release
+page](https://github.com/johanthoren/check_jitter/releases/latest).
 
-Use together with NRPE or similar, preferably with [Opsview](https://www.itrsgroup.com/products/infrastructure-monitoring).
+Use together with NRPE or similar, preferably with
+[Opsview](https://www.itrsgroup.com/products/infrastructure-monitoring).
 
 Note that the plugin requires elevated permissions, so you will have to use
 `setuid` or similar.
