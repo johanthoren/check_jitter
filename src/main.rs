@@ -27,6 +27,10 @@ Thresholds are defined using Nagios range syntax. Examples:
 #[derive(Parser, Debug)]
 #[command(author, version, long_about = None, about = ABOUT_TEXT)]
 struct Args {
+    /// Critical limit for network jitter in milliseconds
+    #[arg(short, long)]
+    critical: Option<String>,
+
     /// Enable debug logging
     #[arg(short, long)]
     debug: bool,
@@ -50,10 +54,6 @@ struct Args {
     /// Warning limit for network jitter in milliseconds
     #[arg(short, long)]
     warning: Option<String>,
-
-    /// Critical limit for network jitter in milliseconds
-    #[arg(short, long)]
-    critical: Option<String>,
 }
 
 fn exit_with_message(status: Status) {
