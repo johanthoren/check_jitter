@@ -1,5 +1,9 @@
 # check_jitter
 
+[![crates.io](https://img.shields.io/crates/v/check-jitter.svg)](https://crates.io/crates/check-jitter)
+[![Documentation](https://docs.rs/check-jitter/badge.svg)](https://docs.rs/check-jitter)
+[![ISC licensed](https://img.shields.io/crates/l/check-jitter.svg)](./LICENSE)
+
 This plugin will measure network jitter by sending a number of ICMP pings to a
 host and calculate the average jitter based on the differences between
 consecutive round trip times.
