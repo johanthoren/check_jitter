@@ -1,7 +1,9 @@
 use log::{debug, error};
 use nagios_range::NagiosRange;
+use rand::Rng;
 use std::fmt;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, ToSocketAddrs};
+use std::thread;
 use std::time::{Duration, SystemTime};
 use thiserror::Error;
 
@@ -70,9 +72,10 @@ pub struct Thresholds {
 #[non_exhaustive]
 #[derive(Debug, PartialEq)]
 pub enum UnkownVariant {
-    InvalidHost(String),
-    NoThresholds,
     Error(CheckJitterError),
+    InvalidHost(String),
+    InvalidMinMaxInterval(u64, u64),
+    NoThresholds,
     RangeParseError(String, nagios_range::Error),
     Timeout(Duration),
 }
@@ -103,6 +106,13 @@ impl fmt::Display for Status<'_> {
             Status::Ok(n, t) => write!(f, "{}", display_string("OK", "ms", *n, t)),
             Status::Warning(n, t) => write!(f, "{}", display_string("WARNING", "ms", *n, t)),
             Status::Critical(n, t) => write!(f, "{}", display_string("CRITICAL", "ms", *n, t)),
+            Status::Unknown(UnkownVariant::InvalidMinMaxInterval(min, max)) => {
+                write!(
+                    f,
+                    "UNKNOWN - Invalid min/max interval: min: {}, max: {}",
+                    min, max
+                )
+            }
             Status::Unknown(UnkownVariant::InvalidHost(s)) => {
                 write!(f, "UNKNOWN - Invalid host: {}", s)
             }
@@ -148,10 +158,32 @@ fn abs_diff_duration(a: Duration, b: Duration) -> Duration {
     }
 }
 
+fn generate_rnd_intervals(count: usize, min_interval: u64, max_interval: u64) -> Vec<Duration> {
+    let mut rnd_intervals = Vec::<Duration>::with_capacity(count);
+
+    if max_interval != 0 && min_interval <= max_interval {
+        debug!(
+            "Generating {} random intervals between {}ms and {}ms...",
+            count, min_interval, max_interval
+        );
+
+        for _ in 0..count {
+            let interval = rand::thread_rng().gen_range(min_interval..=max_interval);
+            rnd_intervals.push(Duration::from_millis(interval));
+        }
+
+        debug!("Random intervals: {:?}", rnd_intervals);
+    }
+
+    rnd_intervals
+}
+
 fn get_durations(
     host: &str,
-    samples: u32,
+    samples: usize,
     timeout: Duration,
+    min_interval: u64,
+    max_interval: u64,
 ) -> Result<Vec<Duration>, CheckJitterError> {
     let ip = if let Ok(ipv4) = host.parse::<Ipv4Addr>() {
         IpAddr::V4(ipv4)
@@ -166,14 +198,26 @@ fn get_durations(
         }
     };
 
-    let mut durations = Vec::<Duration>::with_capacity(samples as usize);
+    let mut durations = Vec::<Duration>::with_capacity(samples);
+    let mut rnd_intervals = generate_rnd_intervals(samples - 1, min_interval, max_interval);
 
-    for _ in 0..samples {
+    for i in 0..samples {
         let start = SystemTime::now();
+        debug!("Ping round {}, start time: {:?}", i + 1, start);
         match ping::ping(ip, Some(timeout), None, None, None, None) {
             Ok(_) => {
                 let end = SystemTime::now();
+                debug!("Ping round {}, end time: {:?}", i + 1, end);
+
+                let duration = end.duration_since(start).unwrap();
+                debug!("Ping round {}, duration: {:?}", i + 1, duration);
+
                 durations.push(end.duration_since(start).unwrap());
+
+                if let Some(interval) = rnd_intervals.pop() {
+                    debug!("Sleeping for {:?}...", interval);
+                    thread::sleep(interval);
+                };
             }
             Err(e) => {
                 if let ping::Error::IoError { error } = &e {
@@ -238,11 +282,13 @@ fn round_jitter(j: f64, precision: u8) -> Result<f64, CheckJitterError> {
 
 pub fn get_jitter(
     host: &str,
-    samples: u32,
+    samples: usize,
     timeout: Duration,
     precision: u8,
+    min_interval: u64,
+    max_interval: u64,
 ) -> Result<f64, CheckJitterError> {
-    let durations = get_durations(host, samples, timeout)?;
+    let durations = get_durations(host, samples, timeout, min_interval, max_interval)?;
     let deltas = calculate_deltas(durations)?;
     let avg_jitter = calculate_avg_jitter(deltas)?;
     round_jitter(avg_jitter, precision)

@@ -39,13 +39,21 @@ struct Args {
     #[arg(long, short = 'H')]
     host: String,
 
+    /// Minimum interval between ping samples in milliseconds
+    #[arg(short, long, default_value = "0")]
+    min_interval: u64,
+
+    /// Maximum interval between ping samples in milliseconds
+    #[arg(short, long, default_value = "0", short = 'M')]
+    max_interval: u64,
+
     /// Precision of the output decimal places
     #[arg(short, long, default_value = "3")]
     precision: u8,
 
     /// Number of pings to send
     #[arg(short, long, default_value = "10")]
-    samples: u32,
+    samples: u16,
 
     /// Timeout in milliseconds per individual ping check
     #[arg(short, long, default_value = "1000")]
@@ -87,6 +95,13 @@ fn main() {
         // TODO: Don't use unwrap().
         .unwrap();
 
+    if args.min_interval > args.max_interval {
+        exit_with_message(Status::Unknown(UnkownVariant::InvalidMinMaxInterval(
+            args.min_interval,
+            args.max_interval,
+        )))
+    }
+
     if validate_host(&args.host).is_err() {
         exit_with_message(Status::Unknown(UnkownVariant::InvalidHost(
             args.host.clone(),
@@ -120,7 +135,14 @@ fn main() {
     let thresholds = Thresholds { warning, critical };
     let timeout = Duration::from_millis(args.timeout);
 
-    match get_jitter(&args.host, args.samples, timeout, args.precision) {
+    match get_jitter(
+        &args.host,
+        args.samples as usize,
+        timeout,
+        args.precision,
+        args.min_interval,
+        args.max_interval,
+    ) {
         Ok(jitter) => exit_with_message(evaluate_thresholds(jitter, &thresholds)),
         Err(e) => exit_with_message(Status::Unknown(UnkownVariant::Error(e))),
     };
