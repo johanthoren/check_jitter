@@ -1,5 +1,5 @@
 use check_jitter::*;
-use clap::Parser;
+use clap::{value_parser, Parser};
 use nagios_range::NagiosRange;
 use std::net::{Ipv4Addr, Ipv6Addr};
 use std::process;
@@ -52,8 +52,8 @@ struct Args {
     precision: u8,
 
     /// Number of pings to send
-    #[arg(short, long, default_value = "10")]
-    samples: u16,
+    #[arg(short, long, default_value = "10", value_parser = value_parser!(u8).range(3..))]
+    samples: u8,
 
     /// Timeout in milliseconds per individual ping check
     #[arg(short, long, default_value = "1000")]

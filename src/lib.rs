@@ -106,15 +106,18 @@ impl fmt::Display for Status<'_> {
             Status::Ok(n, t) => write!(f, "{}", display_string("OK", "ms", *n, t)),
             Status::Warning(n, t) => write!(f, "{}", display_string("WARNING", "ms", *n, t)),
             Status::Critical(n, t) => write!(f, "{}", display_string("CRITICAL", "ms", *n, t)),
+            Status::Unknown(UnkownVariant::Error(e)) => {
+                write!(f, "UNKNOWN - An error occurred: '{}'", e)
+            }
+            Status::Unknown(UnkownVariant::InvalidHost(s)) => {
+                write!(f, "UNKNOWN - Invalid host: {}", s)
+            }
             Status::Unknown(UnkownVariant::InvalidMinMaxInterval(min, max)) => {
                 write!(
                     f,
                     "UNKNOWN - Invalid min/max interval: min: {}, max: {}",
                     min, max
                 )
-            }
-            Status::Unknown(UnkownVariant::InvalidHost(s)) => {
-                write!(f, "UNKNOWN - Invalid host: {}", s)
             }
             Status::Unknown(UnkownVariant::NoThresholds) => {
                 write!(
@@ -128,9 +131,6 @@ impl fmt::Display for Status<'_> {
                     "UNKNOWN - Unable to parse range '{}' with error: {}",
                     s, e
                 )
-            }
-            Status::Unknown(UnkownVariant::Error(e)) => {
-                write!(f, "UNKNOWN - An error occurred: '{}'", e)
             }
             Status::Unknown(UnkownVariant::Timeout(d)) => {
                 write!(f, "UNKNOWN - Ping timeout occurred after {:?}", d)
