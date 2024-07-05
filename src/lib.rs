@@ -92,10 +92,10 @@ fn display_string(status: &str, uom: &str, f: f64, t: &Thresholds) -> String {
     let label = "Average Jitter";
     match (t.warning, t.critical) {
         (Some(w), Some(c)) => {
-            format!("{status} - {label}: {f}{uom}|'{label}'={f}{uom};{w}{uom};{c}{uom}")
+            format!("{status} - {label}: {f}{uom}|'{label}'={f}{uom};{w};{c}")
         }
-        (Some(w), None) => format!("{status} - {label}: {f}{uom}|'{label}'={f}{uom};{w}{uom};"),
-        (None, Some(c)) => format!("{status} - {label}: {f}{uom}|'{label}'={f}{uom};;{c}{uom}"),
+        (Some(w), None) => format!("{status} - {label}: {f}{uom}|'{label}'={f}{uom};{w};"),
+        (None, Some(c)) => format!("{status} - {label}: {f}{uom}|'{label}'={f}{uom};;{c}"),
         (None, None) => format!("{status} - {label}: {f}{uom}"),
     }
 }
