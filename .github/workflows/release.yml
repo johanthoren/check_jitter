@@ -2,6 +2,9 @@ on: release
 
 name: Build and Release Binaries
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: release binaries for ${{ matrix.target }}
