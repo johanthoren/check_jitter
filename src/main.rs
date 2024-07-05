@@ -103,7 +103,7 @@ fn main() {
     }
 
     if validate_host(&args.host).is_err() {
-        exit_with_message(Status::Unknown(UnkownVariant::InvalidHost(
+        exit_with_message(Status::Unknown(UnkownVariant::InvalidAddr(
             args.host.clone(),
         )))
     }

@@ -47,7 +47,7 @@ pub enum CheckJitterError {
     #[error("Ping timed out after: {0}ms")]
     Timeout(String),
 
-    #[error("Unable to parse host: {0}")]
+    #[error("Unable to parse hostname: {0}")]
     UrlParseError(url::ParseError),
 }
 
@@ -73,7 +73,7 @@ pub struct Thresholds {
 #[derive(Debug, PartialEq)]
 pub enum UnkownVariant {
     Error(CheckJitterError),
-    InvalidHost(String),
+    InvalidAddr(String),
     InvalidMinMaxInterval(u64, u64),
     NoThresholds,
     RangeParseError(String, nagios_range::Error),
@@ -109,8 +109,8 @@ impl fmt::Display for Status<'_> {
             Status::Unknown(UnkownVariant::Error(e)) => {
                 write!(f, "UNKNOWN - An error occurred: '{}'", e)
             }
-            Status::Unknown(UnkownVariant::InvalidHost(s)) => {
-                write!(f, "UNKNOWN - Invalid host: {}", s)
+            Status::Unknown(UnkownVariant::InvalidAddr(s)) => {
+                write!(f, "UNKNOWN - Invalid address or hostname: {}", s)
             }
             Status::Unknown(UnkownVariant::InvalidMinMaxInterval(min, max)) => {
                 write!(
@@ -179,22 +179,22 @@ fn generate_rnd_intervals(count: usize, min_interval: u64, max_interval: u64) ->
 }
 
 fn get_durations(
-    host: &str,
+    addr: &str,
     samples: usize,
     timeout: Duration,
     min_interval: u64,
     max_interval: u64,
 ) -> Result<Vec<Duration>, CheckJitterError> {
-    let ip = if let Ok(ipv4) = host.parse::<Ipv4Addr>() {
+    let ip = if let Ok(ipv4) = addr.parse::<Ipv4Addr>() {
         IpAddr::V4(ipv4)
-    } else if let Ok(ipv6) = host.parse::<Ipv6Addr>() {
+    } else if let Ok(ipv6) = addr.parse::<Ipv6Addr>() {
         IpAddr::V6(ipv6)
     } else {
         // Perform DNS lookup
         // TODO: Don't use unwrap().
-        match (host, 0).to_socket_addrs().unwrap().next() {
+        match (addr, 0).to_socket_addrs().unwrap().next() {
             Some(socket_addr) => socket_addr.ip(),
-            None => return Err(CheckJitterError::DnsLookupFailed(host.to_string())),
+            None => return Err(CheckJitterError::DnsLookupFailed(addr.to_string())),
         }
     };
 
@@ -259,11 +259,9 @@ fn calculate_deltas(durations: Vec<Duration>) -> Result<Vec<Duration>, CheckJitt
 
 fn calculate_avg_jitter(deltas: Vec<Duration>) -> Result<f64, CheckJitterError> {
     let total_jitter = deltas.iter().sum::<Duration>();
-
     debug!("Sum of deltas: {:?}", total_jitter);
 
     let avg_jitter = total_jitter / deltas.len() as u32;
-
     debug!("Average jitter duration: {:?}", avg_jitter);
 
     let jitter_float = avg_jitter.as_secs_f64() * 1000.0;
@@ -280,20 +278,88 @@ fn round_jitter(j: f64, precision: u8) -> Result<f64, CheckJitterError> {
     Ok(rounded_avg_jitter)
 }
 
+/// Get and calculate the average jitter to an IP address or hostname.
+///
+/// This function will perform a DNS lookup if a hostname is provided and then use that IP address
+/// to ping the target. The function will then calculate the average difference in duration between
+/// the pings.
+///
+/// The average rounded jitter will then be calculated using these deltas.
+///
+/// Note that opening a raw socket requires root privileges on Unix-like systems.
+///
+/// # Arguments
+/// * `addr` - The IP address or hostname to ping.
+/// * `samples` - The number of samples (pings) to take.
+/// * `timeout` - The timeout for each ping.
+/// * `precision` - The number of decimal places to round the jitter to.
+/// * `min_interval` - The minimum interval between pings in milliseconds.
+/// * `max_interval` - The maximum interval between pings in milliseconds.
+///
+/// # Returns
+/// The average jitter in milliseconds as a floating point number rounded to the specified decimal.
+///
+/// # Example
+/// ```rust,no_run // This example will not run because it requires root privileges.
+/// use check_jitter::{get_jitter, CheckJitterError};
+/// use std::time::Duration;
+///
+/// fn main() -> Result<(), CheckJitterError> {
+///    let jitter = get_jitter("192.168.1.1", 10, Duration::from_secs(1), 3, 10, 100)?;
+///    println!("Average jitter: {}ms", jitter);
+///    Ok(())
+/// }
+/// ```
 pub fn get_jitter(
-    host: &str,
+    addr: &str,
     samples: usize,
     timeout: Duration,
     precision: u8,
     min_interval: u64,
     max_interval: u64,
 ) -> Result<f64, CheckJitterError> {
-    let durations = get_durations(host, samples, timeout, min_interval, max_interval)?;
+    let durations = get_durations(addr, samples, timeout, min_interval, max_interval)?;
     let deltas = calculate_deltas(durations)?;
     let avg_jitter = calculate_avg_jitter(deltas)?;
     round_jitter(avg_jitter, precision)
 }
 
+/// Evaluate the jitter against the thresholds and return the appropriate status.
+///
+/// This function will evaluate the jitter against the provided thresholds and return the
+/// appropriate status. It will match against the critical threshold first and then the warning
+/// threshold, returning the first match or `Status::Ok` if no thresholds are matched.
+///
+/// # Arguments
+/// * `jitter` - The jitter to evaluate as a 64 bit floating point number.
+/// * `thresholds` - A reference to the `Thresholds` to evaluate against.
+///
+/// # Returns
+/// The `Status` of the jitter against the thresholds.
+///
+/// # Example
+/// ```rust
+/// use check_jitter::{evaluate_thresholds, Thresholds, Status};
+/// use nagios_range::NagiosRange;
+/// use std::time::Duration;
+///
+/// fn main() {
+///    let jitter = 0.1;
+///    let thresholds = Thresholds {
+///        warning: Some(NagiosRange::from("0:0.5").unwrap()),
+///        critical: Some(NagiosRange::from("0:1").unwrap()),
+///    };
+///
+///    let status = evaluate_thresholds(jitter, &thresholds);
+///
+///    match status {
+///        Status::Ok(_, _) => println!("Jitter is OK"),
+///        Status::Warning(_, _) => println!("Jitter is warning"),
+///        Status::Critical(_, _) => println!("Jitter is critical"),
+///        Status::Unknown(_) => println!("Unknown status"),
+///    }
+/// }
+/// ```
 pub fn evaluate_thresholds(jitter: f64, thresholds: &Thresholds) -> Status {
     if let Some(c) = thresholds.critical {
         debug!("Checking critical threshold: {:?}", c);
