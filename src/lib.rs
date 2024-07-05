@@ -6,7 +6,7 @@ use std::time::{Duration, SystemTime};
 use thiserror::Error;
 
 #[derive(Debug)]
-pub struct PingErrorWrapper(pub ping::Error);
+pub struct PingErrorWrapper(ping::Error);
 
 impl PartialEq for PingErrorWrapper {
     fn eq(&self, other: &Self) -> bool {
@@ -228,7 +228,7 @@ fn calculate_avg_jitter(deltas: Vec<Duration>) -> Result<f64, CheckJitterError> 
     Ok(jitter_float)
 }
 
-pub fn round_jitter(j: f64, precision: u8) -> Result<f64, CheckJitterError> {
+fn round_jitter(j: f64, precision: u8) -> Result<f64, CheckJitterError> {
     let factor = 10f64.powi(precision as i32);
     let rounded_avg_jitter = (j * factor).round() / factor;
     debug!("jitter as rounded f64: {:?}", rounded_avg_jitter);
