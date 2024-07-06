@@ -200,6 +200,78 @@ impl fmt::Display for Status<'_> {
     }
 }
 
+#[cfg(test)]
+mod status_display_tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn test_with_ok() {
+        let t = Thresholds {
+            warning: Some(NagiosRange::from("0:0.5").unwrap()),
+            critical: Some(NagiosRange::from("0:1").unwrap()),
+        };
+        let status = Status::Ok(0.1, &t);
+        let expected = "OK - Average Jitter: 0.1ms|'Average Jitter'=0.1ms;0:0.5;0:1";
+        let actual = format!("{}", status);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    // The expected value is the same as the previous test, even if the str given to initiate
+    // the NagiosRange is different.
+    fn test_with_ok_simple_thresholds() {
+        let t = Thresholds {
+            warning: Some(NagiosRange::from("0.5").unwrap()),
+            critical: Some(NagiosRange::from("1").unwrap()),
+        };
+        let status = Status::Ok(0.1, &t);
+        let expected = "OK - Average Jitter: 0.1ms|'Average Jitter'=0.1ms;0:0.5;0:1";
+        let actual = format!("{}", status);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_with_warning() {
+        let t = Thresholds {
+            warning: Some(NagiosRange::from("0:0.5").unwrap()),
+            critical: Some(NagiosRange::from("0:1").unwrap()),
+        };
+        let status = Status::Warning(0.1, &t);
+        let expected = "WARNING - Average Jitter: 0.1ms|'Average Jitter'=0.1ms;0:0.5;0:1";
+        let actual = format!("{}", status);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_with_critical() {
+        let t = Thresholds {
+            warning: Some(NagiosRange::from("0:0.5").unwrap()),
+            critical: Some(NagiosRange::from("0:1").unwrap()),
+        };
+        let status = Status::Critical(0.1, &t);
+        let expected = "CRITICAL - Average Jitter: 0.1ms|'Average Jitter'=0.1ms;0:0.5;0:1";
+        let actual = format!("{}", status);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_with_error() {
+        let status = Status::Unknown(UnkownVariant::Error(CheckJitterError::DnsLookupFailed(
+            "example.com".to_string(),
+        )));
+
+        let expected = "UNKNOWN - An error occurred: 'DNS Lookup failed for: example.com'";
+        let actual = format!("{}", status);
+
+        assert_eq!(actual, expected);
+    }
+}
+
 impl Status<'_> {
     pub fn to_int(&self) -> i32 {
         match self {
