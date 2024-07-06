@@ -484,6 +484,51 @@ fn calculate_deltas(durations: Vec<Duration>) -> Result<Vec<Duration>, CheckJitt
     Ok(deltas)
 }
 
+#[cfg(test)]
+mod calculate_deltas_tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn test_with_simple_durations() {
+        let durations = vec![
+            Duration::from_nanos(100_000_000),
+            Duration::from_nanos(100_100_000),
+            Duration::from_nanos(100_200_000),
+            Duration::from_nanos(100_300_000),
+        ];
+
+        let expected_deltas = vec![
+            Duration::from_nanos(100_000),
+            Duration::from_nanos(100_000),
+            Duration::from_nanos(100_000),
+        ];
+
+        let deltas = calculate_deltas(durations).unwrap();
+
+        assert_eq!(deltas, expected_deltas);
+    }
+
+    #[test]
+    fn test_with_irregular_durations() {
+        let durations = vec![
+            Duration::from_nanos(100_000_000),
+            Duration::from_nanos(100_101_200),
+            Duration::from_nanos(101_200_030),
+            Duration::from_nanos(100_310_900),
+        ];
+
+        let expected_deltas = vec![
+            Duration::from_nanos(101_200),
+            Duration::from_nanos(1_098_830),
+            Duration::from_nanos(889_130),
+        ];
+
+        let deltas = calculate_deltas(durations).unwrap();
+        assert_eq!(deltas, expected_deltas);
+    }
+}
+
 fn calculate_avg_jitter(deltas: Vec<Duration>) -> Result<f64, CheckJitterError> {
     let total_jitter = deltas.iter().sum::<Duration>();
     debug!("Sum of deltas: {:?}", total_jitter);
