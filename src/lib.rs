@@ -69,6 +69,12 @@ pub struct Thresholds {
     pub critical: Option<NagiosRange>,
 }
 
+impl Thresholds {
+    pub fn new(warning: Option<NagiosRange>, critical: Option<NagiosRange>) -> Self {
+        Thresholds { warning, critical }
+    }
+}
+
 #[non_exhaustive]
 #[derive(Debug, PartialEq)]
 pub enum UnkownVariant {

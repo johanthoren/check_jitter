@@ -122,7 +122,6 @@ fn main() {
     }
 
     let mut warning: Option<NagiosRange> = None;
-
     if let Some(w) = args.warning {
         let w_range = NagiosRange::from(&w);
         match w_range {
@@ -132,7 +131,6 @@ fn main() {
     }
 
     let mut critical: Option<NagiosRange> = None;
-
     if let Some(c) = args.critical {
         let c_range = NagiosRange::from(&c);
         match c_range {
@@ -141,7 +139,7 @@ fn main() {
         }
     }
 
-    let thresholds = Thresholds { warning, critical };
+    let thresholds = Thresholds::new(warning, critical);
     let timeout = Duration::from_millis(args.timeout);
 
     match get_jitter(
