@@ -491,13 +491,7 @@ mod generate_intervals_tests {
     }
 }
 
-fn get_durations(
-    addr: &str,
-    samples: u8,
-    timeout: Duration,
-    min_interval: u64,
-    max_interval: u64,
-) -> Result<Vec<Duration>, CheckJitterError> {
+fn parse_addr(addr: &str) -> Result<IpAddr, CheckJitterError> {
     let ip = if let Ok(ipv4) = addr.parse::<Ipv4Addr>() {
         IpAddr::V4(ipv4)
     } else if let Ok(ipv6) = addr.parse::<Ipv6Addr>() {
@@ -511,9 +505,16 @@ fn get_durations(
         }
     };
 
-    let mut durations = Vec::<Duration>::with_capacity(samples as usize);
-    let mut rnd_intervals = generate_intervals(samples - 1, min_interval, max_interval);
+    Ok(ip)
+}
 
+fn run_samples(
+    ip: IpAddr,
+    samples: u8,
+    timeout: Duration,
+    mut intervals: Vec<Duration>,
+) -> Result<Vec<Duration>, CheckJitterError> {
+    let mut durations = Vec::<Duration>::with_capacity(samples as usize);
     for i in 0..samples {
         let start = SystemTime::now();
         debug!("Ping round {}, start time: {:?}", i + 1, start);
@@ -527,7 +528,7 @@ fn get_durations(
 
                 durations.push(end.duration_since(start).unwrap());
 
-                if let Some(interval) = rnd_intervals.pop() {
+                if let Some(interval) = intervals.pop() {
                     debug!("Sleeping for {:?}...", interval);
                     thread::sleep(interval);
                 };
@@ -550,10 +551,20 @@ fn get_durations(
             }
         };
     }
-
     debug!("Ping durations: {:?}", durations);
-
     Ok(durations)
+}
+
+fn get_durations(
+    addr: &str,
+    samples: u8,
+    timeout: Duration,
+    min_interval: u64,
+    max_interval: u64,
+) -> Result<Vec<Duration>, CheckJitterError> {
+    let ip = parse_addr(addr)?;
+    let intervals = generate_intervals(samples - 1, min_interval, max_interval);
+    run_samples(ip, samples, timeout, intervals)
 }
 
 fn calculate_deltas(durations: Vec<Duration>) -> Result<Vec<Duration>, CheckJitterError> {
