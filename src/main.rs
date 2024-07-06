@@ -143,7 +143,7 @@ fn main() {
 
     match get_jitter(
         &args.host,
-        args.samples as usize,
+        args.samples,
         timeout,
         args.precision,
         args.min_interval,

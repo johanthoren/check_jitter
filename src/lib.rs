@@ -88,8 +88,7 @@ pub enum Status<'a> {
     Unknown(UnkownVariant),
 }
 
-fn display_string(status: &str, uom: &str, f: f64, t: &Thresholds) -> String {
-    let label = "Average Jitter";
+fn display_string(label: &str, status: &str, uom: &str, f: f64, t: &Thresholds) -> String {
     match (t.warning, t.critical) {
         (Some(w), Some(c)) => {
             format!("{status} - {label}: {f}{uom}|'{label}'={f}{uom};{w};{c}")
@@ -100,12 +99,74 @@ fn display_string(status: &str, uom: &str, f: f64, t: &Thresholds) -> String {
     }
 }
 
+#[cfg(test)]
+mod display_string_tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn test_display_string_with_both_thresholds() {
+        let thresholds = Thresholds {
+            warning: Some(NagiosRange::from("0:0.5").unwrap()),
+            critical: Some(NagiosRange::from("0:1").unwrap()),
+        };
+
+        let expected = "OK - Average Jitter: 0.1ms|'Average Jitter'=0.1ms;0:0.5;0:1";
+        let actual = display_string("Average Jitter", "OK", "ms", 0.1, &thresholds);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_display_string_with_only_warning() {
+        let thresholds = Thresholds {
+            warning: Some(NagiosRange::from("0:0.5").unwrap()),
+            critical: None,
+        };
+
+        let expected = "OK - Average Jitter: 0.1ms|'Average Jitter'=0.1ms;0:0.5";
+        let actual = display_string("Average Jitter", "OK", "ms", 0.1, &thresholds);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_display_string_with_only_critical() {
+        let thresholds = Thresholds {
+            warning: None,
+            critical: Some(NagiosRange::from("0:0.5").unwrap()),
+        };
+
+        let expected = "OK - Average Jitter: 0.1ms|'Average Jitter'=0.1ms;;0:0.5";
+        let actual = display_string("Average Jitter", "OK", "ms", 0.1, &thresholds);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_display_string_with_no_thresholds() {
+        let thresholds = Thresholds {
+            warning: None,
+            critical: None,
+        };
+
+        let expected = "OK - Average Jitter: 0.1ms|'Average Jitter'=0.1ms";
+        let actual = display_string("Average Jitter", "OK", "ms", 0.1, &thresholds);
+
+        assert_eq!(actual, expected);
+    }
+}
+
 impl fmt::Display for Status<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let label = "Average Jitter";
+        let uom = "ms";
         match self {
-            Status::Ok(n, t) => write!(f, "{}", display_string("OK", "ms", *n, t)),
-            Status::Warning(n, t) => write!(f, "{}", display_string("WARNING", "ms", *n, t)),
-            Status::Critical(n, t) => write!(f, "{}", display_string("CRITICAL", "ms", *n, t)),
+            Status::Ok(n, t) => write!(f, "{}", display_string(label, "OK", uom, *n, t)),
+            Status::Warning(n, t) => write!(f, "{}", display_string(label, "WARNING", uom, *n, t)),
+            Status::Critical(n, t) => {
+                write!(f, "{}", display_string(label, "CRITICAL", uom, *n, t))
+            }
             Status::Unknown(UnkownVariant::Error(e)) => {
                 write!(f, "UNKNOWN - An error occurred: '{}'", e)
             }
@@ -158,29 +219,195 @@ fn abs_diff_duration(a: Duration, b: Duration) -> Duration {
     }
 }
 
-fn generate_rnd_intervals(count: usize, min_interval: u64, max_interval: u64) -> Vec<Duration> {
-    let mut rnd_intervals = Vec::<Duration>::with_capacity(count);
+#[cfg(test)]
+mod abs_diff_duration_tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
 
-    if max_interval != 0 && min_interval <= max_interval {
-        debug!(
-            "Generating {} random intervals between {}ms and {}ms...",
-            count, min_interval, max_interval
-        );
+    #[test]
+    fn test_abs_diff_duration_with_small_a() {
+        let a = Duration::from_nanos(100000000);
+        let b = Duration::from_nanos(100100000);
+        let expected = Duration::from_nanos(100000);
+        let actual = abs_diff_duration(a, b);
 
-        for _ in 0..count {
-            let interval = rand::thread_rng().gen_range(min_interval..=max_interval);
-            rnd_intervals.push(Duration::from_millis(interval));
-        }
-
-        debug!("Random intervals: {:?}", rnd_intervals);
+        assert_eq!(actual, expected);
     }
 
-    rnd_intervals
+    #[test]
+    fn test_abs_diff_duration_with_small_b() {
+        let a = Duration::from_nanos(100100000);
+        let b = Duration::from_nanos(100000000);
+        let expected = Duration::from_nanos(100000);
+        let actual = abs_diff_duration(a, b);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_abs_diff_duration_with_equal_values() {
+        let a = Duration::from_nanos(100000000);
+        let b = Duration::from_nanos(100000000);
+        let expected = Duration::from_nanos(0);
+        let actual = abs_diff_duration(a, b);
+
+        assert_eq!(actual, expected);
+    }
+}
+
+fn generate_intervals(count: u8, min_interval: u64, max_interval: u64) -> Vec<Duration> {
+    if min_interval > max_interval {
+        debug!(
+            "Invalid min and max interval: min: {}, max: {}. No random intervals will be generated.",
+            min_interval, max_interval
+        );
+        return Vec::new();
+    }
+
+    if max_interval == 0 && min_interval == 0 {
+        debug!("Min and max interval are both 0. No random intervals will be generated.");
+        return Vec::new();
+    }
+
+    let mut intervals = Vec::with_capacity(count as usize);
+
+    if max_interval == min_interval {
+        debug!(
+            "Min and max interval are equal: {}ms. Intervals will not be randomized.",
+            min_interval
+        );
+        for _ in 0..count {
+            intervals.push(Duration::from_millis(min_interval));
+        }
+
+        debug!("Random intervals: {:?}", intervals);
+
+        return intervals;
+    }
+
+    debug!(
+        "Generating {} random intervals between {}ms and {}ms...",
+        count, min_interval, max_interval
+    );
+
+    for _ in 0..count {
+        let interval = rand::thread_rng().gen_range(min_interval..=max_interval);
+        intervals.push(Duration::from_millis(interval));
+    }
+
+    debug!("Random intervals: {:?}", intervals);
+
+    intervals
+}
+
+#[cfg(test)]
+mod generate_intervals_tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn test_generate_rnd_intervals_with_min_max() {
+        let count = 10;
+        let min_interval = 10;
+        let max_interval = 100;
+        let intervals = generate_intervals(count, min_interval, max_interval);
+
+        assert_eq!(intervals.len(), count as usize);
+        for i in intervals {
+            assert!(i >= Duration::from_millis(min_interval));
+            assert!(i <= Duration::from_millis(max_interval));
+        }
+    }
+
+    #[test]
+    fn test_generate_rnd_intervals_with_min_max_equal() {
+        let count = 10;
+        let min_interval = 10;
+        let max_interval = 10;
+        let intervals = generate_intervals(count, min_interval, max_interval);
+
+        assert_eq!(intervals.len(), count as usize);
+        for i in intervals {
+            assert_eq!(i, Duration::from_millis(min_interval));
+        }
+    }
+
+    #[test]
+    fn test_generate_rnd_intervals_with_min_max_zero() {
+        let count = 10;
+        let min_interval = 0;
+        let max_interval = 0;
+        let intervals = generate_intervals(count, min_interval, max_interval);
+
+        assert_eq!(intervals, Vec::<Duration>::new());
+        assert!(intervals.is_empty());
+    }
+
+    #[test]
+    fn test_generate_rnd_intervals_with_min_max_swapped() {
+        let count = 10;
+        let min_interval = 100;
+        let max_interval = 10;
+        let intervals = generate_intervals(count, min_interval, max_interval);
+
+        assert_eq!(intervals, Vec::<Duration>::new());
+        assert!(intervals.is_empty());
+    }
+    #[test]
+    fn test_generate_rnd_intervals_with_zero_count() {
+        let count = 0;
+        let min_interval = 10;
+        let max_interval = 100;
+        let intervals = generate_intervals(count, min_interval, max_interval);
+
+        assert_eq!(intervals, Vec::<Duration>::new());
+        assert!(intervals.is_empty());
+    }
+
+    #[test]
+    fn test_generate_rnd_intervals_with_large_range() {
+        let count = 10;
+        let min_interval = 1;
+        let max_interval = 1_000_000;
+        let intervals = generate_intervals(count, min_interval, max_interval);
+
+        assert_eq!(intervals.len(), count as usize);
+        for i in intervals {
+            assert!(i >= Duration::from_millis(min_interval));
+            assert!(i <= Duration::from_millis(max_interval));
+        }
+    }
+
+    #[test]
+    fn test_generate_rnd_intervals_with_single_interval() {
+        let count = 1;
+        let min_interval = 10;
+        let max_interval = 100;
+        let intervals = generate_intervals(count, min_interval, max_interval);
+
+        assert_eq!(intervals.len(), 1);
+        assert!(intervals[0] >= Duration::from_millis(min_interval));
+        assert!(intervals[0] <= Duration::from_millis(max_interval));
+    }
+
+    #[test]
+    fn test_generate_rnd_intervals_with_very_large_intervals() {
+        let count = 10;
+        let min_interval = u64::MAX - 1_000;
+        let max_interval = u64::MAX;
+        let intervals = generate_intervals(count, min_interval, max_interval);
+
+        assert_eq!(intervals.len(), count as usize);
+        for i in intervals {
+            assert!(i >= Duration::from_millis(min_interval));
+            assert!(i <= Duration::from_millis(max_interval));
+        }
+    }
 }
 
 fn get_durations(
     addr: &str,
-    samples: usize,
+    samples: u8,
     timeout: Duration,
     min_interval: u64,
     max_interval: u64,
@@ -198,8 +425,8 @@ fn get_durations(
         }
     };
 
-    let mut durations = Vec::<Duration>::with_capacity(samples);
-    let mut rnd_intervals = generate_rnd_intervals(samples - 1, min_interval, max_interval);
+    let mut durations = Vec::<Duration>::with_capacity(samples as usize);
+    let mut rnd_intervals = generate_intervals(samples - 1, min_interval, max_interval);
 
     for i in 0..samples {
         let start = SystemTime::now();
@@ -309,7 +536,7 @@ fn round_jitter(j: f64, precision: u8) -> Result<f64, CheckJitterError> {
 /// ```
 pub fn get_jitter(
     addr: &str,
-    samples: usize,
+    samples: u8,
     timeout: Duration,
     precision: u8,
     min_interval: u64,
@@ -386,6 +613,7 @@ pub fn evaluate_thresholds(jitter: f64, thresholds: &Thresholds) -> Status {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     fn durations_1() -> Vec<Duration> {
         vec![
