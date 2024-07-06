@@ -1,5 +1,7 @@
 use check_jitter::*;
+use chrono::Utc;
 use clap::{value_parser, Parser};
+use log::debug;
 use nagios_range::NagiosRange;
 use std::net::{Ipv4Addr, Ipv6Addr};
 use std::process;
@@ -100,15 +102,46 @@ fn validate_host(s: &str) -> Result<String, CheckJitterError> {
     }
 }
 
+fn setup_logger(debug: bool) -> Result<(), Box<dyn std::error::Error>> {
+    if debug {
+        fern::Dispatch::new()
+            .format(move |out, message, record| {
+                out.finish(format_args!(
+                    "{} [{}] [{}] [{}:{}] {}",
+                    Utc::now().format("%Y-%m-%d %H:%M:%S%.3f"),
+                    record.target(),
+                    record.level(),
+                    record.file().unwrap_or("unknown"),
+                    record.line().unwrap_or(0),
+                    message
+                ))
+            })
+            .level(log::LevelFilter::Debug)
+            .chain(std::io::stderr())
+            .apply()?;
+    } else {
+        fern::Dispatch::new()
+            .format(move |out, message, record| {
+                out.finish(format_args!(
+                    "{} [{}] [{}] {}",
+                    Utc::now().format("%Y-%m-%d %H:%M:%S%.3f"),
+                    record.target(),
+                    record.level(),
+                    message
+                ))
+            })
+            .level(log::LevelFilter::Info)
+            .chain(std::io::stderr())
+            .apply()?;
+    }
+    Ok(())
+}
+
 /// Check network jitter.
 fn main() {
     let args = Args::parse();
 
-    if let Err(e) = stderrlog::new()
-        .module(module_path!())
-        .verbosity(if args.debug { 4 } else { 0 })
-        .init()
-    {
+    if let Err(e) = setup_logger(args.debug) {
         exit_with_message(Status::Unknown(UnkownVariant::FailedToInitLogger(
             e.to_string(),
         )))
@@ -147,6 +180,21 @@ fn main() {
 
     let thresholds = Thresholds::new(warning, critical);
     let timeout = Duration::from_millis(args.timeout);
+
+    debug!("{:<34}{}", "Will check jitter for host:", args.host);
+    debug!("{:<34}{}", "Samples to send:", args.samples);
+    debug!("{:<34}{}ms", "Timeout per ping:", args.timeout);
+    debug!(
+        "{:<34}{}ms",
+        "Minimum wait time between pings:", args.min_interval
+    );
+    debug!(
+        "{:<34}{}ms",
+        "Maximum wait time between pings:", args.max_interval
+    );
+    debug!("{:<34}{}", "Decimal precision:", args.precision);
+    debug!("{:<34}{:?}", "Warning threshold:", warning);
+    debug!("{:<34}{:?}", "Critical threshold:", critical);
 
     match get_jitter(
         &args.host,
