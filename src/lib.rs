@@ -73,6 +73,7 @@ pub struct Thresholds {
 #[derive(Debug, PartialEq)]
 pub enum UnkownVariant {
     Error(CheckJitterError),
+    FailedToInitLogger(String),
     InvalidAddr(String),
     InvalidMinMaxInterval(u64, u64),
     NoThresholds,
@@ -169,6 +170,13 @@ impl fmt::Display for Status<'_> {
             }
             Status::Unknown(UnkownVariant::Error(e)) => {
                 write!(f, "UNKNOWN - An error occurred: '{}'", e)
+            }
+            Status::Unknown(UnkownVariant::FailedToInitLogger(s)) => {
+                write!(
+                    f,
+                    "UNKNOWN - Failed to initialize logger with error: '{}'",
+                    s
+                )
             }
             Status::Unknown(UnkownVariant::InvalidAddr(s)) => {
                 write!(f, "UNKNOWN - Invalid address or hostname: {}", s)

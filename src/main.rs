@@ -94,12 +94,15 @@ fn validate_host(s: &str) -> Result<String, CheckJitterError> {
 fn main() {
     let args = Args::parse();
 
-    stderrlog::new()
+    if let Err(e) = stderrlog::new()
         .module(module_path!())
         .verbosity(if args.debug { 4 } else { 0 })
         .init()
-        // TODO: Don't use unwrap().
-        .unwrap();
+    {
+        exit_with_message(Status::Unknown(UnkownVariant::FailedToInitLogger(
+            e.to_string(),
+        )))
+    }
 
     if args.min_interval > args.max_interval {
         exit_with_message(Status::Unknown(UnkownVariant::InvalidMinMaxInterval(
