@@ -550,6 +550,58 @@ fn round_jitter(j: f64, precision: u8) -> Result<f64, CheckJitterError> {
     Ok(rounded_avg_jitter)
 }
 
+#[cfg(test)]
+mod calculate_rounded_jitter_tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn test_with_simple_durations() {
+        let simple_durations = vec![
+            Duration::from_nanos(100_000_000),
+            Duration::from_nanos(100_100_000),
+            Duration::from_nanos(100_200_000),
+            Duration::from_nanos(100_300_000),
+            Duration::from_nanos(100_400_000),
+            Duration::from_nanos(100_500_000),
+            Duration::from_nanos(100_600_000),
+            Duration::from_nanos(100_700_000),
+            Duration::from_nanos(100_800_000),
+            Duration::from_nanos(100_900_000),
+        ];
+
+        let expected_jitter = 0.1;
+        let deltas = calculate_deltas(simple_durations).unwrap();
+        let avg_jitter = calculate_avg_jitter(deltas).unwrap();
+        let rounded_avg_jitter = round_jitter(avg_jitter, 3).unwrap();
+
+        assert_eq!(rounded_avg_jitter, expected_jitter);
+    }
+
+    #[test]
+    fn test_with_irregular_durations() {
+        let irregular_durations = vec![
+            Duration::from_nanos(270_279_792),
+            Duration::from_nanos(270_400_049),
+            Duration::from_nanos(270_242_514),
+            Duration::from_nanos(269_988_869),
+            Duration::from_nanos(270_157_314),
+            Duration::from_nanos(270_096_136),
+            Duration::from_nanos(270_105_637),
+            Duration::from_nanos(270_003_857),
+            Duration::from_nanos(270_192_099),
+            Duration::from_nanos(270_035_557),
+        ];
+
+        let expected_jitter = 0.135_236;
+        let deltas = calculate_deltas(irregular_durations).unwrap();
+        let avg_jitter = calculate_avg_jitter(deltas).unwrap();
+        let rounded_avg_jitter = round_jitter(avg_jitter, 6).unwrap();
+
+        assert_eq!(rounded_avg_jitter, expected_jitter);
+    }
+}
+
 /// Get and calculate the average jitter to an IP address or hostname.
 ///
 /// This function will perform a DNS lookup if a hostname is provided and then use that IP address
@@ -653,60 +705,4 @@ pub fn evaluate_thresholds(jitter: f64, thresholds: &Thresholds) -> Status {
     }
 
     Status::Ok(jitter, thresholds)
-}
-
-#[cfg(test)]
-mod integrated_function_tests {
-    use super::*;
-    use pretty_assertions::assert_eq;
-
-    fn durations_1() -> Vec<Duration> {
-        vec![
-            Duration::from_nanos(100_000_000),
-            Duration::from_nanos(100_100_000),
-            Duration::from_nanos(100_200_000),
-            Duration::from_nanos(100_300_000),
-            Duration::from_nanos(100_400_000),
-            Duration::from_nanos(100_500_000),
-            Duration::from_nanos(100_600_000),
-            Duration::from_nanos(100_700_000),
-            Duration::from_nanos(100_800_000),
-            Duration::from_nanos(100_900_000),
-        ]
-    }
-
-    #[test]
-    fn test_calculate_jitter_1() {
-        let expected_jitter = 0.1;
-        let deltas = calculate_deltas(durations_1()).unwrap();
-        let avg_jitter = calculate_avg_jitter(deltas).unwrap();
-        let rounded_avg_jitter = round_jitter(avg_jitter, 3).unwrap();
-
-        assert_eq!(rounded_avg_jitter, expected_jitter);
-    }
-
-    fn durations_2() -> Vec<Duration> {
-        vec![
-            Duration::from_nanos(270_279_792),
-            Duration::from_nanos(270_400_049),
-            Duration::from_nanos(270_242_514),
-            Duration::from_nanos(269_988_869),
-            Duration::from_nanos(270_157_314),
-            Duration::from_nanos(270_096_136),
-            Duration::from_nanos(270_105_637),
-            Duration::from_nanos(270_003_857),
-            Duration::from_nanos(270_192_099),
-            Duration::from_nanos(270_035_557),
-        ]
-    }
-
-    #[test]
-    fn test_calculate_jitter_2() {
-        let expected_jitter = 0.135_236;
-        let deltas = calculate_deltas(durations_2()).unwrap();
-        let avg_jitter = calculate_avg_jitter(deltas).unwrap();
-        let rounded_avg_jitter = round_jitter(avg_jitter, 6).unwrap();
-
-        assert_eq!(rounded_avg_jitter, expected_jitter);
-    }
 }
