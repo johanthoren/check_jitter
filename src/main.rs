@@ -121,23 +121,19 @@ fn main() {
         exit_with_message(Status::Unknown(UnkownVariant::NoThresholds))
     }
 
-    let mut warning: Option<NagiosRange> = None;
-    if let Some(w) = args.warning {
-        let w_range = NagiosRange::from(&w);
-        match w_range {
-            Ok(r) => warning = Some(r),
-            Err(e) => exit_with_message(Status::Unknown(UnkownVariant::RangeParseError(w, e))),
-        }
-    }
+    let warning: Option<NagiosRange> = match args.warning {
+        Some(w) => NagiosRange::from(w.as_str())
+            .map_err(|e| exit_with_message(Status::Unknown(UnkownVariant::RangeParseError(w, e))))
+            .ok(),
+        None => None,
+    };
 
-    let mut critical: Option<NagiosRange> = None;
-    if let Some(c) = args.critical {
-        let c_range = NagiosRange::from(&c);
-        match c_range {
-            Ok(r) => critical = Some(r),
-            Err(e) => exit_with_message(Status::Unknown(UnkownVariant::RangeParseError(c, e))),
-        }
-    }
+    let critical: Option<NagiosRange> = match args.critical {
+        Some(c) => NagiosRange::from(c.as_str())
+            .map_err(|e| exit_with_message(Status::Unknown(UnkownVariant::RangeParseError(c, e))))
+            .ok(),
+        None => None,
+    };
 
     let thresholds = Thresholds::new(warning, critical);
     let timeout = Duration::from_millis(args.timeout);
