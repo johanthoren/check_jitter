@@ -656,27 +656,27 @@ pub fn evaluate_thresholds(jitter: f64, thresholds: &Thresholds) -> Status {
 }
 
 #[cfg(test)]
-mod tests {
+mod integrated_function_tests {
     use super::*;
     use pretty_assertions::assert_eq;
 
     fn durations_1() -> Vec<Duration> {
         vec![
-            Duration::from_nanos(100000000),
-            Duration::from_nanos(100100000),
-            Duration::from_nanos(100200000),
-            Duration::from_nanos(100300000),
-            Duration::from_nanos(100400000),
-            Duration::from_nanos(100500000),
-            Duration::from_nanos(100600000),
-            Duration::from_nanos(100700000),
-            Duration::from_nanos(100800000),
-            Duration::from_nanos(100900000),
+            Duration::from_nanos(100_000_000),
+            Duration::from_nanos(100_100_000),
+            Duration::from_nanos(100_200_000),
+            Duration::from_nanos(100_300_000),
+            Duration::from_nanos(100_400_000),
+            Duration::from_nanos(100_500_000),
+            Duration::from_nanos(100_600_000),
+            Duration::from_nanos(100_700_000),
+            Duration::from_nanos(100_800_000),
+            Duration::from_nanos(100_900_000),
         ]
     }
 
     #[test]
-    fn test_calculate_deltas_1() {
+    fn test_calculate_jitter_1() {
         let expected_jitter = 0.1;
         let deltas = calculate_deltas(durations_1()).unwrap();
         let avg_jitter = calculate_avg_jitter(deltas).unwrap();
@@ -687,22 +687,22 @@ mod tests {
 
     fn durations_2() -> Vec<Duration> {
         vec![
-            Duration::from_nanos(270279792),
-            Duration::from_nanos(270400049),
-            Duration::from_nanos(270242514),
-            Duration::from_nanos(269988869),
-            Duration::from_nanos(270157314),
-            Duration::from_nanos(270096136),
-            Duration::from_nanos(270105637),
-            Duration::from_nanos(270003857),
-            Duration::from_nanos(270192099),
-            Duration::from_nanos(270035557),
+            Duration::from_nanos(270_279_792),
+            Duration::from_nanos(270_400_049),
+            Duration::from_nanos(270_242_514),
+            Duration::from_nanos(269_988_869),
+            Duration::from_nanos(270_157_314),
+            Duration::from_nanos(270_096_136),
+            Duration::from_nanos(270_105_637),
+            Duration::from_nanos(270_003_857),
+            Duration::from_nanos(270_192_099),
+            Duration::from_nanos(270_035_557),
         ]
     }
 
     #[test]
-    fn test_calculate_deltas_2() {
-        let expected_jitter = 0.135236;
+    fn test_calculate_jitter_2() {
+        let expected_jitter = 0.135_236;
         let deltas = calculate_deltas(durations_2()).unwrap();
         let avg_jitter = calculate_avg_jitter(deltas).unwrap();
         let rounded_avg_jitter = round_jitter(avg_jitter, 6).unwrap();
