@@ -105,7 +105,7 @@ mod display_string_tests {
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn test_display_string_with_both_thresholds() {
+    fn test_with_both_thresholds() {
         let thresholds = Thresholds {
             warning: Some(NagiosRange::from("0:0.5").unwrap()),
             critical: Some(NagiosRange::from("0:1").unwrap()),
@@ -118,7 +118,7 @@ mod display_string_tests {
     }
 
     #[test]
-    fn test_display_string_with_only_warning() {
+    fn test_with_only_warning() {
         let thresholds = Thresholds {
             warning: Some(NagiosRange::from("0:0.5").unwrap()),
             critical: None,
@@ -131,7 +131,7 @@ mod display_string_tests {
     }
 
     #[test]
-    fn test_display_string_with_only_critical() {
+    fn test_with_only_critical() {
         let thresholds = Thresholds {
             warning: None,
             critical: Some(NagiosRange::from("0:0.5").unwrap()),
@@ -144,7 +144,7 @@ mod display_string_tests {
     }
 
     #[test]
-    fn test_display_string_with_no_thresholds() {
+    fn test_with_no_thresholds() {
         let thresholds = Thresholds {
             warning: None,
             critical: None,
@@ -225,7 +225,7 @@ mod abs_diff_duration_tests {
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn test_abs_diff_duration_with_small_a() {
+    fn test_with_small_a() {
         let a = Duration::from_nanos(100000000);
         let b = Duration::from_nanos(100100000);
         let expected = Duration::from_nanos(100000);
@@ -235,7 +235,7 @@ mod abs_diff_duration_tests {
     }
 
     #[test]
-    fn test_abs_diff_duration_with_small_b() {
+    fn test_with_small_b() {
         let a = Duration::from_nanos(100100000);
         let b = Duration::from_nanos(100000000);
         let expected = Duration::from_nanos(100000);
@@ -245,7 +245,7 @@ mod abs_diff_duration_tests {
     }
 
     #[test]
-    fn test_abs_diff_duration_with_equal_values() {
+    fn test_with_equal_values() {
         let a = Duration::from_nanos(100000000);
         let b = Duration::from_nanos(100000000);
         let expected = Duration::from_nanos(0);
@@ -306,7 +306,7 @@ mod generate_intervals_tests {
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn test_generate_rnd_intervals_with_min_max() {
+    fn test_with_min_max() {
         let count = 10;
         let min_interval = 10;
         let max_interval = 100;
@@ -320,7 +320,7 @@ mod generate_intervals_tests {
     }
 
     #[test]
-    fn test_generate_rnd_intervals_with_min_max_equal() {
+    fn test_with_min_max_equal() {
         let count = 10;
         let min_interval = 10;
         let max_interval = 10;
@@ -333,7 +333,7 @@ mod generate_intervals_tests {
     }
 
     #[test]
-    fn test_generate_rnd_intervals_with_min_max_zero() {
+    fn test_with_min_max_zero() {
         let count = 10;
         let min_interval = 0;
         let max_interval = 0;
@@ -344,7 +344,7 @@ mod generate_intervals_tests {
     }
 
     #[test]
-    fn test_generate_rnd_intervals_with_min_max_swapped() {
+    fn test_with_min_max_swapped() {
         let count = 10;
         let min_interval = 100;
         let max_interval = 10;
@@ -354,7 +354,7 @@ mod generate_intervals_tests {
         assert!(intervals.is_empty());
     }
     #[test]
-    fn test_generate_rnd_intervals_with_zero_count() {
+    fn test_with_zero_count() {
         let count = 0;
         let min_interval = 10;
         let max_interval = 100;
@@ -365,7 +365,7 @@ mod generate_intervals_tests {
     }
 
     #[test]
-    fn test_generate_rnd_intervals_with_large_range() {
+    fn test_with_large_range() {
         let count = 10;
         let min_interval = 1;
         let max_interval = 1_000_000;
@@ -379,7 +379,7 @@ mod generate_intervals_tests {
     }
 
     #[test]
-    fn test_generate_rnd_intervals_with_single_interval() {
+    fn test_with_single_interval() {
         let count = 1;
         let min_interval = 10;
         let max_interval = 100;
@@ -391,7 +391,7 @@ mod generate_intervals_tests {
     }
 
     #[test]
-    fn test_generate_rnd_intervals_with_very_large_intervals() {
+    fn test_with_very_large_intervals() {
         let count = 10;
         let min_interval = u64::MAX - 1_000;
         let max_interval = u64::MAX;
