@@ -226,9 +226,9 @@ mod abs_diff_duration_tests {
 
     #[test]
     fn test_with_small_a() {
-        let a = Duration::from_nanos(100000000);
-        let b = Duration::from_nanos(100100000);
-        let expected = Duration::from_nanos(100000);
+        let a = Duration::from_nanos(100_000_000);
+        let b = Duration::from_nanos(100_100_000);
+        let expected = Duration::from_nanos(100_000);
         let actual = abs_diff_duration(a, b);
 
         assert_eq!(actual, expected);
@@ -236,9 +236,9 @@ mod abs_diff_duration_tests {
 
     #[test]
     fn test_with_small_b() {
-        let a = Duration::from_nanos(100100000);
-        let b = Duration::from_nanos(100000000);
-        let expected = Duration::from_nanos(100000);
+        let a = Duration::from_nanos(100_100_000);
+        let b = Duration::from_nanos(100_000_000);
+        let expected = Duration::from_nanos(100_000);
         let actual = abs_diff_duration(a, b);
 
         assert_eq!(actual, expected);
@@ -246,8 +246,8 @@ mod abs_diff_duration_tests {
 
     #[test]
     fn test_with_equal_values() {
-        let a = Duration::from_nanos(100000000);
-        let b = Duration::from_nanos(100000000);
+        let a = Duration::from_nanos(100_000_000);
+        let b = Duration::from_nanos(100_000_000);
         let expected = Duration::from_nanos(0);
         let actual = abs_diff_duration(a, b);
 
