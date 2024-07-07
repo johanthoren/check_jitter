@@ -106,42 +106,52 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: check-jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.gz
+          path: check-jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.gz
       - name: Upload tar.gz sha256 artifact
         uses: actions/upload-artifact@v2
         with:
           name: check-jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.gz.sha256
+          path: check-jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.gz.sha256
       - name: Upload tar.xz artifact
         uses: actions/upload-artifact@v2
         with:
           name: check-jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.xz
+          path: check-jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.xz
       - name: Upload tar.xz sha256 artifact
         uses: actions/upload-artifact@v2
         with:
           name: check-jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.xz.sha256
+          path: check-jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.xz.sha256
       - name: Upload tar.zst artifact
         uses: actions/upload-artifact@v2
         with:
           name: check-jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.zst
+          path: check-jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.zst
       - name: Upload tar.zst sha256 artifact
         uses: actions/upload-artifact@v2
         with:
           name: check-jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.zst.sha256
+          path: check-jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.zst.sha256
       - name: Upload Opsview RPM
         uses: actions/upload-artifact@v2
         with:
           name: check-jitter-opsview-${{ needs.cargo_version.outputs.version }}-1.x86_64.rpm
+          path: check-jitter-opsview-${{ needs.cargo_version.outputs.version }}-1.x86_64.rpm
       - name: Upload Opsview RPM sha256
         uses: actions/upload-artifact@v2
         with:
           name: check-jitter-opsview-${{ needs.cargo_version.outputs.version }}-1.x86_64.rpm.sha256
+          path: check-jitter-opsview-${{ needs.cargo_version.outputs.version }}-1.x86_64.rpm.sha256
       - name: Upload Opsview DEB
         uses: actions/upload-artifact@v2
         with:
           name: check-jitter-opsview_${{ needs.cargo_version.outputs.version }}-1_amd64.deb
+          path: check-jitter-opsview_${{ needs.cargo_version.outputs.version }}-1_amd64.deb
       - name: Upload Opsview DEB sha256
         uses: actions/upload-artifact@v2
         with:
           name: check-jitter-opsview_${{ needs.cargo_version.outputs.version }}-1_amd64.deb.sha256
+          path: check-jitter-opsview_${{ needs.cargo_version.outputs.version }}-1_amd64.deb.sha256
 
   build_windows:
     runs-on: ubuntu-latest
@@ -171,10 +181,12 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: check-jitter-${{ needs.cargo_version.outputs.version }}-x86_64-windows.zip
+          path: check-jitter-${{ needs.cargo_version.outputs.version }}-x86_64-windows.zip
       - name: Upload zip sha256 artifact
         uses: actions/upload-artifact@v2
         with:
           name: check-jitter-${{ needs.cargo_version.outputs.version }}-x86_64-windows.zip.sha256
+          path: check-jitter-${{ needs.cargo_version.outputs.version }}-x86_64-windows.zip.sha256
 
   create_release:
     runs-on: ubuntu-latest
@@ -185,6 +197,8 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
+      - name: Download artifacts
+        uses: actions/download-artifact@v2
       - name: Create GH Release
         uses: softprops/action-gh-release@v2
         with:
