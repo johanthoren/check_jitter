@@ -3,3 +3,4 @@
 *.rpm
 *.deb
 *.exe
+/check_jitter-x86_64-*
