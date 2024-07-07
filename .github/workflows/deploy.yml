@@ -87,7 +87,7 @@ jobs:
       - name: Generate shasum for RPM
         run: shasum -a 256 check-jitter-opsview-${{ needs.cargo_version.outputs.version }}-1.x86_64.rpm > check-jitter-opsview-${{ needs.cargo_version.outputs.version }}-1.x86_64.rpm.sha256
       - name: Generate shasum for DEB
-        run: shasum -a 256 check-jitter-opsview_${{ needs.cargo_version.outputs.version }}-1_amd64.deb > check-jitter-opsview_{{ needs.cargo_version.outputs.version }}-1_amd64.deb.sha256
+        run: shasum -a 256 check-jitter-opsview_${{ needs.cargo_version.outputs.version }}-1_amd64.deb > check-jitter-opsview_${{ needs.cargo_version.outputs.version }}-1_amd64.deb.sha256
       - name: Rename binary
         run: mv check_jitter-x86_64-unknown-linux-musl check_jitter
       - name: Archive binary as tar.gz
