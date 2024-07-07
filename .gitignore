@@ -2,3 +2,4 @@
 /Cargo.lock
 *.rpm
 *.deb
+*.exe

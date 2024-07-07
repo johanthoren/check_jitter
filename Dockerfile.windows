@@ -1,0 +1,18 @@
+FROM rust:1.78 AS build
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+RUN apt-get update && apt-get install -y mingw-w64
+
+COPY src /src
+COPY Cargo.toml /Cargo.toml
+COPY rustfmt.toml /rustfmt.toml
+
+ENV CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=x86_64-w64-mingw32-gcc
+ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
+RUN rustup target add x86_64-pc-windows-gnu
+RUN cargo build --release --target x86_64-pc-windows-gnu
+RUN x86_64-w64-mingw32-strip --strip-all /target/x86_64-pc-windows-gnu/release/check_jitter.exe
+
+# Create final image
+FROM scratch AS bin
+COPY --from=build /target/x86_64-pc-windows-gnu/release/check_jitter.exe /check_jitter-x86_64-pc-windows-gnu.exe
