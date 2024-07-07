@@ -172,7 +172,7 @@ jobs:
       - name: Rename binary
         run: mv check_jitter-x86_64-pc-windows-gnu.exe check_jitter.exe
       - name: Install zip
-        run: apt update && apt install -y zip
+        run: sudo apt update && sudo apt install -y zip
       - name: Archive binary
         run: /usr/bin/zip check-jitter-${{ needs.cargo_version.outputs.version }}-x86_64-windows.zip check_jitter.exe
       - name: Generate shasum for zip
