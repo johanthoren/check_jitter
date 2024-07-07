@@ -10,6 +10,18 @@ use std::time::Duration;
 const ABOUT_TEXT: &str = r#"
 check_jitter - A Nagios compatible plugin that measures network jitter.
 
+AGGREGATION METHOD
+
+The plugin can aggregate the deltas from multiple samples in the following ways:
+- average: the average of all deltas (arithmetic mean) [default]
+- median: the median of all deltas
+- max: the maximum of all deltas
+- min: the minimum of all deltas
+
+SAMPLES
+
+The number of pings to send to the target host. Must be greater than 2.
+
 SAMPLE INTERVALS
 
 When -m and -M are both set to 0, the plugin will send pings immediately after
@@ -45,6 +57,10 @@ Example ranges:
 #[derive(Parser, Debug)]
 #[command(author, version, long_about = None, about = ABOUT_TEXT)]
 struct Args {
+    /// Aggregation method to use for multiple samples
+    #[arg(short, long, default_value = "average")]
+    aggregation_method: AggregationMethod,
+
     /// Critical limit for network jitter in milliseconds
     #[arg(short, long)]
     critical: Option<String>,
@@ -197,6 +213,7 @@ fn main() {
     debug!("{:<34}{:?}", "Critical threshold:", critical);
 
     match get_jitter(
+        args.aggregation_method,
         &args.host,
         args.samples,
         timeout,
@@ -204,7 +221,11 @@ fn main() {
         args.min_interval,
         args.max_interval,
     ) {
-        Ok(jitter) => exit_with_message(evaluate_thresholds(jitter, &thresholds)),
+        Ok(jitter) => exit_with_message(evaluate_thresholds(
+            args.aggregation_method,
+            jitter,
+            &thresholds,
+        )),
         Err(e) => exit_with_message(Status::Unknown(UnkownVariant::Error(e))),
     };
 }

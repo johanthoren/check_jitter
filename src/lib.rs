@@ -7,6 +7,43 @@ use std::thread;
 use std::time::{Duration, SystemTime};
 use thiserror::Error;
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum AggregationMethod {
+    Average,
+    Median,
+    Max,
+    Min,
+}
+
+impl std::str::FromStr for AggregationMethod {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "average" => Ok(AggregationMethod::Average),
+            "avg" => Ok(AggregationMethod::Average),
+            "mean" => Ok(AggregationMethod::Average),
+            "median" => Ok(AggregationMethod::Median),
+            "med" => Ok(AggregationMethod::Median),
+            "minimum" => Ok(AggregationMethod::Min),
+            "min" => Ok(AggregationMethod::Min),
+            "maximum" => Ok(AggregationMethod::Max),
+            "max" => Ok(AggregationMethod::Max),
+            _ => Err(format!("'{}' is not a valid aggregation method", s)),
+        }
+    }
+}
+impl fmt::Display for AggregationMethod {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            AggregationMethod::Average => write!(f, "average"),
+            AggregationMethod::Median => write!(f, "median"),
+            AggregationMethod::Max => write!(f, "max"),
+            AggregationMethod::Min => write!(f, "min"),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct PingErrorWrapper(ping::Error);
 
@@ -89,9 +126,9 @@ pub enum UnkownVariant {
 
 #[derive(Debug, PartialEq)]
 pub enum Status<'a> {
-    Ok(f64, &'a Thresholds),
-    Warning(f64, &'a Thresholds),
-    Critical(f64, &'a Thresholds),
+    Ok(AggregationMethod, f64, &'a Thresholds),
+    Warning(AggregationMethod, f64, &'a Thresholds),
+    Critical(AggregationMethod, f64, &'a Thresholds),
     Unknown(UnkownVariant),
 }
 
@@ -166,12 +203,31 @@ mod display_string_tests {
 
 impl fmt::Display for Status<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let label = "Average Jitter";
         let uom = "ms";
+        let label = match self {
+            Status::Ok(AggregationMethod::Average, _, _) => "Average Jitter",
+            Status::Ok(AggregationMethod::Median, _, _) => "Median Jitter",
+            Status::Ok(AggregationMethod::Max, _, _) => "Max Jitter",
+            Status::Ok(AggregationMethod::Min, _, _) => "Min Jitter",
+            Status::Warning(AggregationMethod::Average, _, _) => "Average Jitter",
+            Status::Warning(AggregationMethod::Median, _, _) => "Median Jitter",
+            Status::Warning(AggregationMethod::Max, _, _) => "Max Jitter",
+            Status::Warning(AggregationMethod::Min, _, _) => "Min Jitter",
+            Status::Critical(AggregationMethod::Average, _, _) => "Average Jitter",
+            Status::Critical(AggregationMethod::Median, _, _) => "Median Jitter",
+            Status::Critical(AggregationMethod::Max, _, _) => "Max Jitter",
+            Status::Critical(AggregationMethod::Min, _, _) => "Min Jitter",
+            _ => "Unknown",
+        };
+
         match self {
-            Status::Ok(n, t) => write!(f, "{}", display_string(label, "OK", uom, *n, t)),
-            Status::Warning(n, t) => write!(f, "{}", display_string(label, "WARNING", uom, *n, t)),
-            Status::Critical(n, t) => {
+            Status::Ok(_, n, t) => {
+                write!(f, "{}", display_string(label, "OK", uom, *n, t))
+            }
+            Status::Warning(_, n, t) => {
+                write!(f, "{}", display_string(label, "WARNING", uom, *n, t))
+            }
+            Status::Critical(_, n, t) => {
                 write!(f, "{}", display_string(label, "CRITICAL", uom, *n, t))
             }
             Status::Unknown(UnkownVariant::Error(e)) => {
@@ -225,7 +281,7 @@ mod status_display_tests {
             warning: Some(NagiosRange::from("0:0.5").unwrap()),
             critical: Some(NagiosRange::from("0:1").unwrap()),
         };
-        let status = Status::Ok(0.1, &t);
+        let status = Status::Ok(AggregationMethod::Average, 0.1, &t);
         let expected = "OK - Average Jitter: 0.1ms|'Average Jitter'=0.1ms;0:0.5;0:1";
         let actual = format!("{}", status);
 
@@ -240,8 +296,8 @@ mod status_display_tests {
             warning: Some(NagiosRange::from("0.5").unwrap()),
             critical: Some(NagiosRange::from("1").unwrap()),
         };
-        let status = Status::Ok(0.1, &t);
-        let expected = "OK - Average Jitter: 0.1ms|'Average Jitter'=0.1ms;0:0.5;0:1";
+        let status = Status::Ok(AggregationMethod::Median, 0.1, &t);
+        let expected = "OK - Median Jitter: 0.1ms|'Median Jitter'=0.1ms;0:0.5;0:1";
         let actual = format!("{}", status);
 
         assert_eq!(actual, expected);
@@ -253,7 +309,7 @@ mod status_display_tests {
             warning: Some(NagiosRange::from("0:0.5").unwrap()),
             critical: Some(NagiosRange::from("0:1").unwrap()),
         };
-        let status = Status::Warning(0.1, &t);
+        let status = Status::Warning(AggregationMethod::Average, 0.1, &t);
         let expected = "WARNING - Average Jitter: 0.1ms|'Average Jitter'=0.1ms;0:0.5;0:1";
         let actual = format!("{}", status);
 
@@ -266,8 +322,8 @@ mod status_display_tests {
             warning: Some(NagiosRange::from("0:0.5").unwrap()),
             critical: Some(NagiosRange::from("0:1").unwrap()),
         };
-        let status = Status::Critical(0.1, &t);
-        let expected = "CRITICAL - Average Jitter: 0.1ms|'Average Jitter'=0.1ms;0:0.5;0:1";
+        let status = Status::Critical(AggregationMethod::Max, 0.1, &t);
+        let expected = "CRITICAL - Max Jitter: 0.1ms|'Max Jitter'=0.1ms;0:0.5;0:1";
         let actual = format!("{}", status);
 
         assert_eq!(actual, expected);
@@ -289,9 +345,9 @@ mod status_display_tests {
 impl Status<'_> {
     pub fn to_int(&self) -> i32 {
         match self {
-            Status::Ok(_, _) => 0,
-            Status::Warning(_, _) => 1,
-            Status::Critical(_, _) => 2,
+            Status::Ok(_, _, _) => 0,
+            Status::Warning(_, _, _) => 1,
+            Status::Critical(_, _, _) => 2,
             Status::Unknown(_) => 3,
         }
     }
@@ -626,6 +682,14 @@ mod calculate_deltas_tests {
     }
 }
 
+fn round_jitter(j: f64, precision: u8) -> Result<f64, CheckJitterError> {
+    let factor = 10f64.powi(precision as i32);
+    let rounded_avg_jitter = (j * factor).round() / factor;
+    debug!("jitter as rounded f64: {:?}", rounded_avg_jitter);
+
+    Ok(rounded_avg_jitter)
+}
+
 fn calculate_avg_jitter(deltas: Vec<Duration>) -> Result<f64, CheckJitterError> {
     let total_jitter = deltas.iter().sum::<Duration>();
     debug!("Sum of deltas: {:?}", total_jitter);
@@ -633,18 +697,52 @@ fn calculate_avg_jitter(deltas: Vec<Duration>) -> Result<f64, CheckJitterError> 
     let avg_jitter = total_jitter / deltas.len() as u32;
     debug!("Average jitter duration: {:?}", avg_jitter);
 
-    let jitter_float = avg_jitter.as_secs_f64() * 1000.0;
-    debug!("jitter as f64: {:?}", jitter_float);
+    let average_float = avg_jitter.as_secs_f64() * 1_000.0;
+    debug!("Average jitter as f64: {:?}", average_float);
 
-    Ok(jitter_float)
+    Ok(average_float)
 }
 
-fn round_jitter(j: f64, precision: u8) -> Result<f64, CheckJitterError> {
-    let factor = 10f64.powi(precision as i32);
-    let rounded_avg_jitter = (j * factor).round() / factor;
-    debug!("jitter as rounded f64: {:?}", rounded_avg_jitter);
+fn calculate_median_jitter(deltas: Vec<Duration>) -> Result<f64, CheckJitterError> {
+    let mut sorted_deltas = deltas.clone();
+    sorted_deltas.sort();
+    debug!("Sorted deltas: {:?}", sorted_deltas);
 
-    Ok(rounded_avg_jitter)
+    let len = sorted_deltas.len();
+    debug!("Number of deltas: {}", len);
+
+    let median_float: f64 = if len % 2 == 0 {
+        let mid = len / 2;
+        let mid_1 = mid - 1;
+        let mid_2 = mid;
+        let dur_1 = sorted_deltas[mid_1].as_secs_f64() * 1_000.0;
+        let dur_2 = sorted_deltas[mid_2].as_secs_f64() * 1_000.0;
+        (dur_1 + dur_2) / 2.0
+    } else {
+        let mid = len / 2;
+        sorted_deltas[mid].as_secs_f64() * 1_000.0
+    };
+    debug!("Median jitter as f64: {:?}", median_float);
+
+    Ok(median_float)
+}
+
+fn calculate_max_jitter(deltas: Vec<Duration>) -> Result<f64, CheckJitterError> {
+    let max = deltas.iter().max().unwrap();
+    debug!("Max jitter: {:?}", max);
+    let max_float = max.as_secs_f64() * 1_000.0;
+    debug!("Max jitter as f64: {:?}", max_float);
+
+    Ok(max_float)
+}
+
+fn calculate_min_jitter(deltas: Vec<Duration>) -> Result<f64, CheckJitterError> {
+    let min = deltas.iter().min().unwrap();
+    debug!("Min jitter: {:?}", min);
+    let min_float = min.as_secs_f64() * 1_000.0;
+    debug!("Min jitter as f64: {:?}", min_float);
+
+    Ok(min_float)
 }
 
 #[cfg(test)]
@@ -667,16 +765,29 @@ mod calculate_rounded_jitter_tests {
             Duration::from_nanos(100_900_000),
         ];
 
-        let expected_jitter = 0.1;
+        let expected_average_jitter = 0.1;
+        let expected_median_jitter = 0.1;
+        let expected_max_jitter = 0.1;
+        let expected_min_jitter = 0.1;
         let deltas = calculate_deltas(simple_durations).unwrap();
-        let avg_jitter = calculate_avg_jitter(deltas).unwrap();
-        let rounded_avg_jitter = round_jitter(avg_jitter, 3).unwrap();
+        println!("{:#?}", deltas.clone());
+        let average_jitter = calculate_avg_jitter(deltas.clone()).unwrap();
+        let median_jitter = calculate_median_jitter(deltas.clone()).unwrap();
+        let max_jitter = calculate_max_jitter(deltas.clone()).unwrap();
+        let min_jitter = calculate_min_jitter(deltas).unwrap();
+        let rounded_average_jitter = round_jitter(average_jitter, 3).unwrap();
+        let rounded_median_jitter = round_jitter(median_jitter, 3).unwrap();
+        let rounded_max_jitter = round_jitter(max_jitter, 3).unwrap();
+        let rounded_min_jitter = round_jitter(min_jitter, 3).unwrap();
 
-        assert_eq!(rounded_avg_jitter, expected_jitter);
+        assert_eq!(rounded_average_jitter, expected_average_jitter);
+        assert_eq!(rounded_median_jitter, expected_median_jitter);
+        assert_eq!(rounded_max_jitter, expected_max_jitter);
+        assert_eq!(rounded_min_jitter, expected_min_jitter);
     }
 
     #[test]
-    fn test_with_irregular_durations() {
+    fn test_with_even_number_of_irregular_durations() {
         let irregular_durations = vec![
             Duration::from_nanos(270_279_792),
             Duration::from_nanos(270_400_049),
@@ -690,26 +801,74 @@ mod calculate_rounded_jitter_tests {
             Duration::from_nanos(270_035_557),
         ];
 
-        let expected_jitter = 0.135_236;
+        let expected_average_jitter = 0.135_236;
+        let expected_median_jitter = 0.156_542;
+        let expected_max_jitter = 0.253_645;
+        let expected_min_jitter = 0.009_501;
         let deltas = calculate_deltas(irregular_durations).unwrap();
-        let avg_jitter = calculate_avg_jitter(deltas).unwrap();
-        let rounded_avg_jitter = round_jitter(avg_jitter, 6).unwrap();
+        println!("{:#?}", deltas.clone());
+        let average_jitter = calculate_avg_jitter(deltas.clone()).unwrap();
+        let median_jitter = calculate_median_jitter(deltas.clone()).unwrap();
+        let max_jitter = calculate_max_jitter(deltas.clone()).unwrap();
+        let min_jitter = calculate_min_jitter(deltas).unwrap();
+        let rounded_average_jitter = round_jitter(average_jitter, 6).unwrap();
+        let rounded_median_jitter = round_jitter(median_jitter, 6).unwrap();
+        let rounded_max_jitter = round_jitter(max_jitter, 6).unwrap();
+        let rounded_min_jitter = round_jitter(min_jitter, 6).unwrap();
 
-        assert_eq!(rounded_avg_jitter, expected_jitter);
+        assert_eq!(rounded_average_jitter, expected_average_jitter);
+        assert_eq!(rounded_median_jitter, expected_median_jitter);
+        assert_eq!(rounded_max_jitter, expected_max_jitter);
+        assert_eq!(rounded_min_jitter, expected_min_jitter);
+    }
+
+    #[test]
+    fn test_with_uneven_number_of_irregular_durations() {
+        let irregular_durations = vec![
+            Duration::from_nanos(270_279_792),
+            Duration::from_nanos(270_400_049),
+            Duration::from_nanos(270_242_514),
+            Duration::from_nanos(269_988_869),
+            Duration::from_nanos(270_157_314),
+            Duration::from_nanos(270_096_136),
+            Duration::from_nanos(270_105_637),
+            Duration::from_nanos(270_003_857),
+            Duration::from_nanos(270_192_099),
+        ];
+
+        let expected_average_jitter = 0.132_572;
+        let expected_median_jitter = 0.138_896;
+        let expected_max_jitter = 0.253_645;
+        let expected_min_jitter = 0.009_501;
+        let deltas = calculate_deltas(irregular_durations).unwrap();
+        println!("{:#?}", deltas.clone());
+        let average_jitter = calculate_avg_jitter(deltas.clone()).unwrap();
+        let median_jitter = calculate_median_jitter(deltas.clone()).unwrap();
+        let max_jitter = calculate_max_jitter(deltas.clone()).unwrap();
+        let min_jitter = calculate_min_jitter(deltas).unwrap();
+        let rounded_average_jitter = round_jitter(average_jitter, 6).unwrap();
+        let rounded_median_jitter = round_jitter(median_jitter, 6).unwrap();
+        let rounded_max_jitter = round_jitter(max_jitter, 6).unwrap();
+        let rounded_min_jitter = round_jitter(min_jitter, 6).unwrap();
+
+        assert_eq!(rounded_average_jitter, expected_average_jitter);
+        assert_eq!(rounded_median_jitter, expected_median_jitter);
+        assert_eq!(rounded_max_jitter, expected_max_jitter);
+        assert_eq!(rounded_min_jitter, expected_min_jitter);
     }
 }
 
-/// Get and calculate the average jitter to an IP address or hostname.
+/// Get and calculate the aggregated jitter to an IP address or hostname.
 ///
 /// This function will perform a DNS lookup if a hostname is provided and then use that IP address
-/// to ping the target. The function will then calculate the average difference in duration between
-/// the pings.
-///
-/// The average rounded jitter will then be calculated using these deltas.
+/// to ping the target. The function will then calculate the aggregated value based on the
+/// aggregation method passed as an argument. This value will then be rounded to the specified
+/// decimal.
 ///
 /// Note that opening a raw socket requires root privileges on Unix-like systems.
 ///
 /// # Arguments
+/// * `aggr_method` - The aggregation method to use.
 /// * `addr` - The IP address or hostname to ping.
 /// * `samples` - The number of samples (pings) to take.
 /// * `timeout` - The timeout for each ping.
@@ -718,17 +877,19 @@ mod calculate_rounded_jitter_tests {
 /// * `max_interval` - The maximum interval between pings in milliseconds.
 ///
 /// # Returns
-/// The average jitter in milliseconds as a floating point number rounded to the specified decimal.
+/// The aggregated jitter in milliseconds as a floating point number rounded to the
+/// specified decimal.
 ///
 /// # Example
 /// ```rust,no_run // This example will not run because it requires root privileges.
-/// use check_jitter::{get_jitter, CheckJitterError};
+/// use check_jitter::{get_jitter, CheckJitterError, AggregationMethod};
 /// use std::time::Duration;
 ///
-/// let jitter = get_jitter("192.168.1.1", 10, Duration::from_secs(1), 3, 10, 100).unwrap();
+/// let jitter = get_jitter(AggregationMethod::Average, "192.168.1.1", 10, Duration::from_secs(1), 3, 10, 100).unwrap();
 /// println!("Average jitter: {}ms", jitter);
 /// ```
 pub fn get_jitter(
+    aggr_method: AggregationMethod,
     addr: &str,
     samples: u8,
     timeout: Duration,
@@ -738,8 +899,13 @@ pub fn get_jitter(
 ) -> Result<f64, CheckJitterError> {
     let durations = get_durations(addr, samples, timeout, min_interval, max_interval)?;
     let deltas = calculate_deltas(durations)?;
-    let avg_jitter = calculate_avg_jitter(deltas)?;
-    round_jitter(avg_jitter, precision)
+    let jitter = match aggr_method {
+        AggregationMethod::Average => calculate_avg_jitter(deltas)?,
+        AggregationMethod::Median => calculate_median_jitter(deltas)?,
+        AggregationMethod::Max => calculate_max_jitter(deltas)?,
+        AggregationMethod::Min => calculate_min_jitter(deltas)?,
+    };
+    round_jitter(jitter, precision)
 }
 
 /// Evaluate the jitter against the thresholds and return the appropriate status.
@@ -757,7 +923,7 @@ pub fn get_jitter(
 ///
 /// # Example
 /// ```rust
-/// use check_jitter::{evaluate_thresholds, Thresholds, Status};
+/// use check_jitter::{evaluate_thresholds, AggregationMethod, Thresholds, Status};
 /// use nagios_range::NagiosRange;
 /// use std::time::Duration;
 ///
@@ -767,23 +933,27 @@ pub fn get_jitter(
 ///     critical: Some(NagiosRange::from("0:1").unwrap()),
 /// };
 ///
-/// let status = evaluate_thresholds(jitter, &thresholds);
+/// let status = evaluate_thresholds(AggregationMethod::Average, jitter, &thresholds);
 ///
 /// match status {
-///     Status::Ok(_, _) => println!("Jitter is OK"),
-///     Status::Warning(_, _) => println!("Jitter is warning"),
-///     Status::Critical(_, _) => println!("Jitter is critical"),
+///     Status::Ok(_, _, _) => println!("Jitter is OK"),
+///     Status::Warning(_, _, _) => println!("Jitter is warning"),
+///     Status::Critical(_, _, _) => println!("Jitter is critical"),
 ///     Status::Unknown(_) => println!("Unknown status"),
 /// }
 /// ```
-pub fn evaluate_thresholds(jitter: f64, thresholds: &Thresholds) -> Status {
+pub fn evaluate_thresholds(
+    aggr_method: AggregationMethod,
+    value: f64,
+    thresholds: &Thresholds,
+) -> Status {
     if let Some(c) = thresholds.critical {
         debug!("Checking critical threshold: {:?}", c);
-        if c.check(jitter) {
-            debug!("Jitter is critical: {:?}", jitter);
-            return Status::Critical(jitter, thresholds);
+        if c.check(value) {
+            debug!("Jitter is critical: {:?}", value);
+            return Status::Critical(aggr_method, value, thresholds);
         } else {
-            debug!("Jitter is not critical: {:?}", jitter);
+            debug!("Jitter is not critical: {:?}", value);
         }
     } else {
         debug!("No critical threshold provided");
@@ -791,15 +961,15 @@ pub fn evaluate_thresholds(jitter: f64, thresholds: &Thresholds) -> Status {
 
     if let Some(w) = thresholds.warning {
         debug!("Checking warning threshold: {:?}", w);
-        if w.check(jitter) {
-            debug!("Jitter is warning: {:?}", jitter);
-            return Status::Warning(jitter, thresholds);
+        if w.check(value) {
+            debug!("Jitter is warning: {:?}", value);
+            return Status::Warning(aggr_method, value, thresholds);
         } else {
-            debug!("Jitter is not warning: {:?}", jitter);
+            debug!("Jitter is not warning: {:?}", value);
         }
     } else {
         debug!("No warning threshold provided");
     }
 
-    Status::Ok(jitter, thresholds)
+    Status::Ok(aggr_method, value, thresholds)
 }

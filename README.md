@@ -13,6 +13,18 @@ consecutive round trip times.
 ``` sh
 check_jitter - A Nagios compatible plugin that measures network jitter.
 
+AGGREGATION METHOD
+
+The plugin can aggregate the deltas from multiple samples in the following ways:
+- average: the average of all deltas (arithmetic mean) [default]
+- median: the median of all deltas
+- max: the maximum of all deltas
+- min: the minimum of all deltas
+
+SAMPLES
+
+The number of pings to send to the target host. Must be greater than 2.
+
 SAMPLE INTERVALS
 
 When -m and -M are both set to 0, the plugin will send pings immediately after
@@ -48,17 +60,30 @@ Example ranges:
 Usage: check_jitter [OPTIONS] --host <HOST>
 
 Options:
-  -c, --critical <CRITICAL>          Critical limit for network jitter in milliseconds
-  -d, --debug                        Enable debug logging
-  -H, --host <HOST>                  Hostname or IP address to ping
-  -m, --min-interval <MIN_INTERVAL>  Minimum interval between ping samples in milliseconds [default: 0]
-  -M, --max-interval <MAX_INTERVAL>  Maximum interval between ping samples in milliseconds [default: 0]
-  -p, --precision <PRECISION>        Precision of the output decimal places [default: 3]
-  -s, --samples <SAMPLES>            Number of pings to send [default: 10]
-  -t, --timeout <TIMEOUT>            Timeout in milliseconds per individual ping check [default: 1000]
-  -w, --warning <WARNING>            Warning limit for network jitter in milliseconds
-  -h, --help                         Print help
-  -V, --version                      Print version
+  -a, --aggregation-method <AGGREGATION_METHOD>
+          Aggregation method to use for multiple samples [default: average]
+  -c, --critical <CRITICAL>
+          Critical limit for network jitter in milliseconds
+  -d, --debug
+          Enable debug logging
+  -H, --host <HOST>
+          Hostname or IP address to ping
+  -m, --min-interval <MIN_INTERVAL>
+          Minimum interval between ping samples in milliseconds [default: 0]
+  -M, --max-interval <MAX_INTERVAL>
+          Maximum interval between ping samples in milliseconds [default: 0]
+  -p, --precision <PRECISION>
+          Precision of the output decimal places [default: 3]
+  -s, --samples <SAMPLES>
+          Number of pings to send [default: 10]
+  -t, --timeout <TIMEOUT>
+          Timeout in milliseconds per individual ping check [default: 1000]
+  -w, --warning <WARNING>
+          Warning limit for network jitter in milliseconds
+  -h, --help
+          Print help
+  -V, --version
+          Print version
 ```
 
 ## Installation
