@@ -82,6 +82,8 @@ jobs:
       - name: Make binaries and packages
         id: make
         run: make linux
+      - name: List the current directory
+        run: ls -alh
       - name: Generate shasum for RPM
         run: shasum -a 256 check_jitter-opsview-${{ needs.cargo_version.outputs.version }}-1.x86_64.rpm > check_jitter-opsview-${{ needs.cargo_version.outputs.version }}-1.x86_64.rpm.sha256
       - name: Generate shasum for DEB
@@ -155,8 +157,10 @@ jobs:
       - name: Make binaries and packages
         id: make
         run: make windows
+      - name: List the current directory
+        run: ls -alh
       - name: Rename binary
-        run: mv check_jitter-x86_64-pc-windows-msvc.exe check_jitter.exe
+        run: mv check_jitter-x86_64-pc-windows-gnu.exe check_jitter.exe
       - name: Install zip
         run: apt update && apt install -y zip
       - name: Archive binary
