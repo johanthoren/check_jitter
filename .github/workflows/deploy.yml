@@ -142,7 +142,7 @@ jobs:
           name: check_jitter-opsview_{{ needs.cargo_version.outputs.version }}-1_amd64.deb.sha256
 
   build_windows:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     needs:
       - cargo_version
       - clippy
