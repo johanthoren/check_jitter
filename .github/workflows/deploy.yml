@@ -83,55 +83,55 @@ jobs:
         id: make
         run: make linux
       - name: Generate shasum for RPM
-        run: shasum -a 256 check_jitter-opsview-{{ needs.cargo_version.outputs.version }}-1.x86_64.rpm > check_jitter-opsview-{{ needs.cargo_version.outputs.version }}-1.x86_64.rpm.sha256
+        run: shasum -a 256 check_jitter-opsview-${{ needs.cargo_version.outputs.version }}-1.x86_64.rpm > check_jitter-opsview-${{ needs.cargo_version.outputs.version }}-1.x86_64.rpm.sha256
       - name: Generate shasum for DEB
-        run: shasum -a 256 check_jitter-opsview_{{ needs.cargo_version.outputs.version }}-1_amd64.deb > check_jitter-opsview_{{ needs.cargo_version.outputs.version }}-1_amd64.deb.sha256
+        run: shasum -a 256 check_jitter-opsview_${{ needs.cargo_version.outputs.version }}-1_amd64.deb > check_jitter-opsview_{{ needs.cargo_version.outputs.version }}-1_amd64.deb.sha256
       - name: Rename binary
         run: mv check_jitter-x86_64-unknown-linux-musl check_jitter
       - name: Archive binary as tar.gz
-        run: tar -czf check_jitter-x86_64-unknown-linux-musl-{{ needs.cargo_version.outputs.version }}.tar.gz check_jitter
+        run: tar -czf check_jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.gz check_jitter
       - name: Generate shasum for tar.gz
-        run: shasum -a 256 check_jitter-x86_64-unknown-linux-musl-{{ needs.cargo_version.outputs.version }}.tar.gz > check_jitter-x86_64-unknown-linux-musl-{{ needs.cargo_version.outputs.version }}.tar.gz.sha256
+        run: shasum -a 256 check_jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.gz > check_jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.gz.sha256
       - name: Archive binary as tar.xz
-        run: tar -cJf check_jitter-x86_64-unknown-linux-musl-{{ needs.cargo_version.outputs.version }}.tar.xz check_jitter
+        run: tar -cJf check_jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.xz check_jitter
       - name: Generate shasum for tar.xz
-        run: shasum -a 256 check_jitter-x86_64-unknown-linux-musl-{{ needs.cargo_version.outputs.version }}.tar.xz > check_jitter-x86_64-unknown-linux-musl-{{ needs.cargo_version.outputs.version }}.tar.xz.sha256
+        run: shasum -a 256 check_jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.xz > check_jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.xz.sha256
       - name: Archive binary as zstd
-        run: tar -c --zstd -f check_jitter-x86_64-unknown-linux-musl-{{ needs.cargo_version.outputs.version }}.tar.zst check_jitter
+        run: tar -c --zstd -f check_jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.zst check_jitter
       - name: Generate shasum for tar.zst
-        run: shasum -a 256 check_jitter-x86_64-unknown-linux-musl-{{ needs.cargo_version.outputs.version }}.tar.zst > check_jitter-x86_64-unknown-linux-musl-{{ needs.cargo_version.outputs.version }}.tar.zst.sha256
+        run: shasum -a 256 check_jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.zst > check_jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.zst.sha256
       - name: Upload tar.gz artifact
         uses: actions/upload-artifact@v2
         with:
-          name: check_jitter-x86_64-unknown-linux-musl-{{ needs.cargo_version.outputs.version }}.tar.gz
+          name: check_jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.gz
       - name: Upload tar.xz sha256 artifact
         uses: actions/upload-artifact@v2
         with:
-          name: check_jitter-x86_64-unknown-linux-musl-{{ needs.cargo_version.outputs.version }}.tar.xz.sha256
+          name: check_jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.xz.sha256
       - name: Upload tar.xz artifact
         uses: actions/upload-artifact@v2
         with:
-          name: check_jitter-x86_64-unknown-linux-musl-{{ needs.cargo_version.outputs.version }}.tar.xz
+          name: check_jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.xz
       - name: Upload tar.xz sha256 artifact
         uses: actions/upload-artifact@v2
         with:
-          name: check_jitter-x86_64-unknown-linux-musl-{{ needs.cargo_version.outputs.version }}.tar.xz.sha256
+          name: check_jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.xz.sha256
       - name: Upload tar.zst artifact
         uses: actions/upload-artifact@v2
         with:
-          name: check_jitter-x86_64-unknown-linux-musl-{{ needs.cargo_version.outputs.version }}.tar.zst
+          name: check_jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.zst
       - name: Upload tar.zst sha256 artifact
         uses: actions/upload-artifact@v2
         with:
-          name: check_jitter-x86_64-unknown-linux-musl-{{ needs.cargo_version.outputs.version }}.tar.zst.sha256
+          name: check_jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.zst.sha256
       - name: Upload Opsview RPM
         uses: actions/upload-artifact@v2
         with:
-          name: check_jitter-opsview-{{ needs.cargo_version.outputs.version }}-1.x86_64.rpm
+          name: check_jitter-opsview-${{ needs.cargo_version.outputs.version }}-1.x86_64.rpm
       - name: Upload Opsview RPM sha256
         uses: actions/upload-artifact@v2
         with:
-          name: check_jitter-opsview-{{ needs.cargo_version.outputs.version }}-1.x86_64.rpm.sha256
+          name: check_jitter-opsview-${{ needs.cargo_version.outputs.version }}-1.x86_64.rpm.sha256
       - name: Upload Opsview DEB
         uses: actions/upload-artifact@v2
         with:
@@ -160,17 +160,17 @@ jobs:
       - name: Install zip
         run: apt update && apt install -y zip
       - name: Archive binary
-        run: /usr/bin/zip check_jitter-{{ needs.cargo_version.outputs.version }}-x86_64-windows.zip check_jitter.exe
+        run: /usr/bin/zip check_jitter-${{ needs.cargo_version.outputs.version }}-x86_64-windows.zip check_jitter.exe
       - name: Generate shasum for zip
-        run: shasum -a 256 check_jitter-{{ needs.cargo_version.outputs.version }}-x86_64-windows.zip > check_jitter-{{ needs.cargo_version.outputs.version }}-x86_64-windows.zip.sha256
+        run: shasum -a 256 check_jitter-${{ needs.cargo_version.outputs.version }}-x86_64-windows.zip > check_jitter-${{ needs.cargo_version.outputs.version }}-x86_64-windows.zip.sha256
       - name: Upload zip artifact
         uses: actions/upload-artifact@v2
         with:
-          name: check_jitter-{{ needs.cargo_version.outputs.version }}-x86_64-windows.zip
+          name: check_jitter-${{ needs.cargo_version.outputs.version }}-x86_64-windows.zip
       - name: Upload zip sha256 artifact
         uses: actions/upload-artifact@v2
         with:
-          name: check_jitter-{{ needs.cargo_version.outputs.version }}-x86_64-windows.zip.sha256
+          name: check_jitter-${{ needs.cargo_version.outputs.version }}-x86_64-windows.zip.sha256
 
   create_release:
     runs-on: ubuntu-latest
@@ -185,18 +185,18 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            check_jitter-x86_64-unknown-linux-musl-{{ needs.cargo_version.outputs.version }}.tar.gz
-            check_jitter-x86_64-unknown-linux-musl-{{ needs.cargo_version.outputs.version }}.tar.xz
-            check_jitter-x86_64-unknown-linux-musl-{{ needs.cargo_version.outputs.version }}.tar.zst
-            check_jitter-opsview-{{ needs.cargo_version.outputs.version }}-1.x86_64.rpm
+            check_jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.gz
+            check_jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.xz
+            check_jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.zst
+            check_jitter-opsview-${{ needs.cargo_version.outputs.version }}-1.x86_64.rpm
             check_jitter-opsview_{{ needs.cargo_version.outputs.version }}-1_amd64.deb
-            check_jitter-{{ needs.cargo_version.outputs.version }}-x86_64-windows.zip
-            check_jitter-x86_64-unknown-linux-musl-{{ needs.cargo_version.outputs.version }}.tar.gz.sha256
-            check_jitter-x86_64-unknown-linux-musl-{{ needs.cargo_version.outputs.version }}.tar.xz.sha256
-            check_jitter-x86_64-unknown-linux-musl-{{ needs.cargo_version.outputs.version }}.tar.zst.sha256
-            check_jitter-opsview-{{ needs.cargo_version.outputs.version }}-1.x86_64.rpm.sha256
+            check_jitter-${{ needs.cargo_version.outputs.version }}-x86_64-windows.zip
+            check_jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.gz.sha256
+            check_jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.xz.sha256
+            check_jitter-x86_64-unknown-linux-musl-${{ needs.cargo_version.outputs.version }}.tar.zst.sha256
+            check_jitter-opsview-${{ needs.cargo_version.outputs.version }}-1.x86_64.rpm.sha256
             check_jitter-opsview_{{ needs.cargo_version.outputs.version }}-1_amd64.deb.sha256
-            check_jitter-{{ needs.cargo_version.outputs.version }}-x86_64-windows.zip.sha256
+            check_jitter-${{ needs.cargo_version.outputs.version }}-x86_64-windows.zip.sha256
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
   publish:
