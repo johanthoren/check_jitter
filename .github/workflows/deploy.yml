@@ -198,7 +198,7 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v4
       - name: Download artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
       - name: Create GH Release
         uses: softprops/action-gh-release@v2
         with:
@@ -217,22 +217,22 @@ jobs:
             check-jitter-${{ needs.cargo_version.outputs.version }}-x86_64-windows.zip.sha256
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
-  publish:
-    needs:
-      - create_release
-    name: Publish Crate to crates.io
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
+  # publish:
+  #   needs:
+  #     - create_release
+  #   name: Publish Crate to crates.io
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout sources
+  #       uses: actions/checkout@v4
 
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
+  #     - name: Install stable toolchain
+  #       uses: actions-rs/toolchain@v1
+  #       with:
+  #         profile: minimal
+  #         toolchain: stable
+  #         override: true
 
-      - run: cargo publish --token ${CRATES_IO_TOKEN}
-        env:
-          CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
+  #     - run: cargo publish --token ${CRATES_IO_TOKEN}
+  #       env:
+  #         CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
