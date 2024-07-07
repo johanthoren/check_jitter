@@ -102,7 +102,7 @@ fn validate_host(s: &str) -> Result<String, CheckJitterError> {
     }
 }
 
-fn setup_logger(debug: bool) -> Result<(), Box<dyn std::error::Error>> {
+fn setup_logger(debug: bool) -> Result<(), fern::InitError> {
     if debug {
         fern::Dispatch::new()
             .format(move |out, message, record| {
