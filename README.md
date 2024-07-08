@@ -12,7 +12,7 @@ consecutive round trip times.
 
 ``` text
 Command:
-----------------------------------------------------------------------
+------------------------------------------------------------------
 check_jitter -H 192.168.1.1 -w 10 -c 20 -m 5 -M 50 -s 30 -a median
            |              |     |     |    |     |     |    |
            |              |     |     |    |     |     |    +- Aggregation method: median
@@ -25,18 +25,18 @@ check_jitter -H 192.168.1.1 -w 10 -c 20 -m 5 -M 50 -s 30 -a median
            +-------------------------------------------------- Command: check_jitter
 
 Output:
-----------------------------------------------------------------------
+------------------------------------------------------------------
 OK - Median Jitter: 0.182ms | 'Median Jitter'=0.182ms;0:10;0:20;0
-|                |    |                                |    |   |
-|                |    |                                |    |   +- Minimum possible value (always 0)
-|                |    |                                |    +----- Critical range: 0 to 20ms
-|                |    |                                +---------- Warning range: 0 to 10ms
-|                |    +------------------------------------------- Performance data label: 'Median Jitter'
-|                +------------------------------------------------ Median jitter: 0.182ms
+|                                         |       |     |    |  |
+|                                         |       |     |    |  +- Minimum possible value (always 0)
+|                                         |       |     |    +---- Critical range: 0 to 20ms
+|                                         |       |     +--------- Warning range: 0 to 10ms
+|                                         |       +--------------- Median jitter: 0.182ms
+|                                         +----------------------- Performance data label: 'Median Jitter'
 +----------------------------------------------------------------- Status: OK
 
 Explanation of Output:
-----------------------------------------------------------------------
+------------------------------------------------------------------
 - Status: OK
   Indicates that the median jitter is within acceptable limits.
 
