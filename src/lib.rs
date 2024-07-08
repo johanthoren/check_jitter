@@ -33,16 +33,6 @@ impl std::str::FromStr for AggregationMethod {
         }
     }
 }
-impl fmt::Display for AggregationMethod {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            AggregationMethod::Average => write!(f, "average"),
-            AggregationMethod::Median => write!(f, "median"),
-            AggregationMethod::Max => write!(f, "max"),
-            AggregationMethod::Min => write!(f, "min"),
-        }
-    }
-}
 
 #[derive(Debug)]
 pub struct PingErrorWrapper(ping::Error);
@@ -89,18 +79,6 @@ pub enum CheckJitterError {
 
     #[error("Unable to parse hostname: {0}")]
     UrlParseError(url::ParseError),
-}
-
-impl From<url::ParseError> for CheckJitterError {
-    fn from(err: url::ParseError) -> Self {
-        CheckJitterError::UrlParseError(err)
-    }
-}
-
-impl From<ping::Error> for CheckJitterError {
-    fn from(err: ping::Error) -> Self {
-        CheckJitterError::PingError(PingErrorWrapper(err))
-    }
 }
 
 impl From<std::io::Error> for CheckJitterError {
