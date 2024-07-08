@@ -100,6 +100,15 @@ impl From<ping::Error> for CheckJitterError {
     }
 }
 
+impl From<std::io::Error> for CheckJitterError {
+    fn from(err: std::io::Error) -> Self {
+        match err.kind() {
+            std::io::ErrorKind::PermissionDenied => CheckJitterError::PermissionDenied,
+            _ => CheckJitterError::PingIoError(err.to_string()),
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Thresholds {
     pub warning: Option<NagiosRange>,
@@ -555,8 +564,7 @@ fn parse_addr(addr: &str) -> Result<IpAddr, CheckJitterError> {
         IpAddr::V6(ipv6)
     } else {
         // Perform DNS lookup
-        // TODO: Don't use unwrap().
-        match (addr, 0).to_socket_addrs().unwrap().next() {
+        match (addr, 0).to_socket_addrs()?.next() {
             Some(socket_addr) => socket_addr.ip(),
             None => return Err(CheckJitterError::DnsLookupFailed(addr.to_string())),
         }
