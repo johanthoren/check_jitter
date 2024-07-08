@@ -202,7 +202,7 @@ impl fmt::Display for Status<'_> {
             Status::Critical(AggregationMethod::Median, _, _) => "Median Jitter",
             Status::Critical(AggregationMethod::Max, _, _) => "Max Jitter",
             Status::Critical(AggregationMethod::Min, _, _) => "Min Jitter",
-            _ => "Unknown",
+            Status::Unknown(_) => "Unknown",
         };
 
         match self {
