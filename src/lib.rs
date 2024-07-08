@@ -133,13 +133,14 @@ pub enum Status<'a> {
 }
 
 fn display_string(label: &str, status: &str, uom: &str, f: f64, t: &Thresholds) -> String {
+    let min: f64 = 0.0;
     match (t.warning, t.critical) {
         (Some(w), Some(c)) => {
-            format!("{status} - {label}: {f}{uom}|'{label}'={f}{uom};{w};{c}")
+            format!("{status} - {label}: {f}{uom}|'{label}'={f}{uom};{w};{c};{min}")
         }
-        (Some(w), None) => format!("{status} - {label}: {f}{uom}|'{label}'={f}{uom};{w}"),
-        (None, Some(c)) => format!("{status} - {label}: {f}{uom}|'{label}'={f}{uom};;{c}"),
-        (None, None) => format!("{status} - {label}: {f}{uom}|'{label}'={f}{uom}"),
+        (Some(w), None) => format!("{status} - {label}: {f}{uom}|'{label}'={f}{uom};{w};;{min}"),
+        (None, Some(c)) => format!("{status} - {label}: {f}{uom}|'{label}'={f}{uom};;{c};{min}"),
+        (None, None) => format!("{status} - {label}: {f}{uom}|'{label}'={f}{uom};;;{min}"),
     }
 }
 
@@ -155,7 +156,7 @@ mod display_string_tests {
             critical: Some(NagiosRange::from("0:1").unwrap()),
         };
 
-        let expected = "OK - Average Jitter: 0.1ms|'Average Jitter'=0.1ms;0:0.5;0:1";
+        let expected = "OK - Average Jitter: 0.1ms|'Average Jitter'=0.1ms;0:0.5;0:1;0";
         let actual = display_string("Average Jitter", "OK", "ms", 0.1, &thresholds);
 
         assert_eq!(actual, expected);
@@ -168,7 +169,7 @@ mod display_string_tests {
             critical: None,
         };
 
-        let expected = "OK - Average Jitter: 0.1ms|'Average Jitter'=0.1ms;0:0.5";
+        let expected = "OK - Average Jitter: 0.1ms|'Average Jitter'=0.1ms;0:0.5;;0";
         let actual = display_string("Average Jitter", "OK", "ms", 0.1, &thresholds);
 
         assert_eq!(actual, expected);
@@ -181,7 +182,7 @@ mod display_string_tests {
             critical: Some(NagiosRange::from("0:0.5").unwrap()),
         };
 
-        let expected = "OK - Average Jitter: 0.1ms|'Average Jitter'=0.1ms;;0:0.5";
+        let expected = "OK - Average Jitter: 0.1ms|'Average Jitter'=0.1ms;;0:0.5;0";
         let actual = display_string("Average Jitter", "OK", "ms", 0.1, &thresholds);
 
         assert_eq!(actual, expected);
@@ -194,7 +195,7 @@ mod display_string_tests {
             critical: None,
         };
 
-        let expected = "OK - Average Jitter: 0.1ms|'Average Jitter'=0.1ms";
+        let expected = "OK - Average Jitter: 0.1ms|'Average Jitter'=0.1ms;;;0";
         let actual = display_string("Average Jitter", "OK", "ms", 0.1, &thresholds);
 
         assert_eq!(actual, expected);
@@ -282,7 +283,7 @@ mod status_display_tests {
             critical: Some(NagiosRange::from("0:1").unwrap()),
         };
         let status = Status::Ok(AggregationMethod::Average, 0.1, &t);
-        let expected = "OK - Average Jitter: 0.1ms|'Average Jitter'=0.1ms;0:0.5;0:1";
+        let expected = "OK - Average Jitter: 0.1ms|'Average Jitter'=0.1ms;0:0.5;0:1;0";
         let actual = format!("{}", status);
 
         assert_eq!(actual, expected);
@@ -297,7 +298,7 @@ mod status_display_tests {
             critical: Some(NagiosRange::from("1").unwrap()),
         };
         let status = Status::Ok(AggregationMethod::Median, 0.1, &t);
-        let expected = "OK - Median Jitter: 0.1ms|'Median Jitter'=0.1ms;0:0.5;0:1";
+        let expected = "OK - Median Jitter: 0.1ms|'Median Jitter'=0.1ms;0:0.5;0:1;0";
         let actual = format!("{}", status);
 
         assert_eq!(actual, expected);
@@ -310,7 +311,7 @@ mod status_display_tests {
             critical: Some(NagiosRange::from("0:1").unwrap()),
         };
         let status = Status::Warning(AggregationMethod::Average, 0.1, &t);
-        let expected = "WARNING - Average Jitter: 0.1ms|'Average Jitter'=0.1ms;0:0.5;0:1";
+        let expected = "WARNING - Average Jitter: 0.1ms|'Average Jitter'=0.1ms;0:0.5;0:1;0";
         let actual = format!("{}", status);
 
         assert_eq!(actual, expected);
@@ -323,7 +324,7 @@ mod status_display_tests {
             critical: Some(NagiosRange::from("0:1").unwrap()),
         };
         let status = Status::Critical(AggregationMethod::Max, 0.1, &t);
-        let expected = "CRITICAL - Max Jitter: 0.1ms|'Max Jitter'=0.1ms;0:0.5;0:1";
+        let expected = "CRITICAL - Max Jitter: 0.1ms|'Max Jitter'=0.1ms;0:0.5;0:1;0";
         let actual = format!("{}", status);
 
         assert_eq!(actual, expected);
