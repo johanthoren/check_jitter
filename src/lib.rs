@@ -34,6 +34,17 @@ impl std::str::FromStr for AggregationMethod {
     }
 }
 
+impl fmt::Display for AggregationMethod {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            AggregationMethod::Average => write!(f, "Average"),
+            AggregationMethod::Median => write!(f, "Median"),
+            AggregationMethod::Max => write!(f, "Max"),
+            AggregationMethod::Min => write!(f, "Min"),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct PingErrorWrapper(ping::Error);
 

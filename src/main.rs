@@ -198,6 +198,7 @@ fn main() {
     let timeout = Duration::from_millis(args.timeout);
 
     debug!("{:<34}{}", "Will check jitter for host:", args.host);
+    debug!("{:<34}{}", "Aggregation method:", args.aggregation_method);
     debug!("{:<34}{}", "Samples to send:", args.samples);
     debug!("{:<34}{}ms", "Timeout per ping:", args.timeout);
     debug!(
