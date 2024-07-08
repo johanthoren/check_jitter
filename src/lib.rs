@@ -69,6 +69,9 @@ pub enum CheckJitterError {
     #[error("DNS Lookup failed for: {0}")]
     DnsLookupFailed(String),
 
+    #[error("The delta count is 0. Cannot calculate jitter.")]
+    EmptyDeltas,
+
     #[error("Invalid IP: {0}")]
     InvalidIP(String),
 
@@ -737,7 +740,7 @@ fn calculate_median_jitter(deltas: Vec<Duration>) -> Result<f64, CheckJitterErro
 }
 
 fn calculate_max_jitter(deltas: Vec<Duration>) -> Result<f64, CheckJitterError> {
-    let max = deltas.iter().max().unwrap();
+    let max = deltas.iter().max().ok_or(CheckJitterError::EmptyDeltas)?;
     debug!("Max jitter: {:?}", max);
     let max_float = max.as_secs_f64() * 1_000.0;
     debug!("Max jitter as f64: {:?}", max_float);
@@ -746,7 +749,7 @@ fn calculate_max_jitter(deltas: Vec<Duration>) -> Result<f64, CheckJitterError> 
 }
 
 fn calculate_min_jitter(deltas: Vec<Duration>) -> Result<f64, CheckJitterError> {
-    let min = deltas.iter().min().unwrap();
+    let min = deltas.iter().min().ok_or(CheckJitterError::EmptyDeltas)?;
     debug!("Min jitter: {:?}", min);
     let min_float = min.as_secs_f64() * 1_000.0;
     debug!("Min jitter as f64: {:?}", min_float);
