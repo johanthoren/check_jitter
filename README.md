@@ -8,9 +8,63 @@ This plugin will measure network jitter by sending a number of ICMP pings to a
 host and calculate the average jitter based on the differences between
 consecutive round trip times.
 
+## Example Command
+
+``` text
+Command:
+----------------------------------------------------------------------
+check_jitter -H 192.168.1.1 -w 10 -c 20 -m 5 -M 50 -s 30 -a median
+           |              |     |     |    |     |     |    |
+           |              |     |     |    |     |     |    +- Aggregation method: median
+           |              |     |     |    |     |     +------ Number of pings to send: 30
+           |              |     |     |    |     +------------ Max interval between pings: 50ms
+           |              |     |     |    +------------------ Min interval between pings: 5ms
+           |              |     |     +----------------------- Critical jitter limit: 20ms
+           |              |     +----------------------------- Warning jitter limit: 10ms
+           |              +----------------------------------- Host: 192.168.1.1
+           +-------------------------------------------------- Command: check_jitter
+
+Output:
+----------------------------------------------------------------------
+OK - Median Jitter: 0.182ms | 'Median Jitter'=0.182ms;0:10;0:20;0
+|                |    |                                |    |   |
+|                |    |                                |    |   +- Minimum possible value (always 0)
+|                |    |                                |    +----- Critical range: 0 to 20ms
+|                |    |                                +---------- Warning range: 0 to 10ms
+|                |    +------------------------------------------- Performance data label: 'Median Jitter'
+|                +------------------------------------------------ Median jitter: 0.182ms
++----------------------------------------------------------------- Status: OK
+
+Explanation of Output:
+----------------------------------------------------------------------
+- Status: OK
+  Indicates that the median jitter is within acceptable limits.
+
+- Median Jitter: 0.182ms
+  The aggregated median jitter value.
+
+- Performance Data:
+  'Median Jitter'=0.182ms;0:10;0:20;0
+   |                  |    |    |   |
+   |                  |    |    |   +- Minimum possible value (always 0)
+   |                  |    |    +----- Critical range: 0 to 20ms
+   |                  |    +---------- Warning range: 0 to 10ms
+   |                  +--------------- Median jitter value: 0.182ms
+   +---------------------------------- Performance data label: 'Median Jitter'
+
+- Unit of Measurement (uom): ms (milliseconds)
+  Indicates the measurement unit used in the performance data.
+
+Reason for Status:
+----------------------------------------------------------------------
+The command did not trigger a warning or critical alert because:
+- The median jitter value (0.182ms) is within the defined warning range (0 to 10ms).
+- The median jitter value (0.182ms) is within the defined critical range (0 to 20ms).
+```
+
 ## Help Text
 
-``` sh
+``` text
 check_jitter - A Nagios compatible plugin that measures network jitter.
 
 AGGREGATION METHOD
