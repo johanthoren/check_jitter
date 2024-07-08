@@ -194,7 +194,7 @@ fn main() {
         None => None,
     };
 
-    let thresholds = Thresholds::new(warning, critical);
+    let thresholds = Thresholds { warning, critical };
     let timeout = Duration::from_millis(args.timeout);
 
     debug!("{:<34}{}", "Will check jitter for host:", args.host);
