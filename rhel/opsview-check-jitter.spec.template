@@ -1,0 +1,37 @@
+Name: opsview-check-jitter
+Version: {{VERSION}}
+Release: 1%{?dist}
+Summary: A Nagios compatible Opsview plugin to check network jitter
+
+License: ISC
+URL: https://github.com/johanthoren/check_jitter
+
+Source0: %{name}-%{version}.tar.gz
+
+Requires: libcap selinux-policy infrastructure-agent
+
+%description
+A Nagios compatible Opsview plugin to measure network jitter.
+
+%prep
+%setup -q
+
+%build
+# Build steps are already handled outside the spec file.
+
+%install
+mkdir -p %{buildroot}/usr/bin
+install -D -m 0755 {{RELEASE_DIR}}/check_jitter %{buildroot}/usr/bin/check_jitter
+mkdir -p %{buildroot}/opt/itrs/infrastructure-agent/cfg
+install -D -m 0440 {{CFG_DIR}}/check_jitter.yml %{buildroot}/opt/itrs/infrastructure-agent/cfg/check_jitter.yml
+
+%post
+/sbin/setcap cap_net_raw+ep /usr/bin/check_jitter || :
+# Handle systems without setcap or where setcap is not permitted
+if [ $? -ne 0 ]; then
+    echo "Warning: setcap failed. Make sure /usr/bin/check_jitter has the necessary capabilities."
+fi
+
+%files
+%attr(0755, root, root) /usr/bin/check_jitter
+%attr(0440, root, root) /opt/itrs/infrastructure-agent/cfg/check_jitter.yml

@@ -1,8 +1,9 @@
-Package: check-jitter-opsview
+Package: opsview-check-jitter
 Version: {{VERSION}}
 Section: base
 Priority: optional
 Architecture: amd64
 Maintainer: Johan Thorén <johan@thoren.xyz>
+Pre-Depends: infrastructure-agent, libcap2-bin
 Description: Opsview plugin to check network jitter
  A Nagios compatible Opsview plugin to measure network jitter.

@@ -1,53 +1,56 @@
 FROM blackdex/rust-musl:x86_64-musl-stable-1.78.0 AS build
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# Create the opsview group with guid 991
-RUN groupadd -g 991 opsview
-
-# Install dependencies for building RPM and DEB packages
 RUN apt-get update && apt-get install -y \
     rpm \
     dpkg-dev \
     fakeroot \
     build-essential
 
-# Copy necessary files
 COPY Cargo.toml rustfmt.toml /project/
 COPY src /project/src
-COPY check-jitter-opsview.spec.template /root/rpmbuild/SPECS/check-jitter-opsview.spec
-COPY debian/DEBIAN/ /root/debbuild/DEBIAN/
 WORKDIR /project
 
-# Extract the version from Cargo.toml
-RUN grep '^version =' Cargo.toml | awk -F\" '{print $2}' > /tmp/version.txt
-
-# Build the Rust project
 ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
 RUN cargo build --release --target x86_64-unknown-linux-musl
-RUN strip --strip-all /project/target/x86_64-unknown-linux-musl/release/check_jitter
+RUN cp /project/target/x86_64-unknown-linux-musl/release/check_jitter /project/check_jitter && \
+    strip --strip-all /project/check_jitter
 
-# Prepare RPM build
-RUN version=$(cat /tmp/version.txt) && \
-    mkdir -p /root/rpmbuild/{SPECS,SOURCES} /tmp/check-jitter-opsview-$version && \
-    cp -r src/* /tmp/check-jitter-opsview-$version/ && \
-    tar czvf /root/rpmbuild/SOURCES/check-jitter-opsview-$version.tar.gz -C /tmp check-jitter-opsview-$version && \
-    sed -i "s/{{VERSION}}/$version/" /root/rpmbuild/SPECS/check-jitter-opsview.spec && \
-    sed -i "s/{{RELEASE_DIR}}/\/project\/target\/x86_64-unknown-linux-musl\/release/" /root/rpmbuild/SPECS/check-jitter-opsview.spec && \
-    rpmbuild -bb /root/rpmbuild/SPECS/check-jitter-opsview.spec && \
-    cp /root/rpmbuild/RPMS/x86_64/check-jitter-opsview-*.x86_64.rpm /check-jitter-opsview-$version-1.x86_64.rpm
+COPY opt /project/opt
+COPY debian/DEBIAN/ /root/debbuild/DEBIAN/
 
-# Prepare DEB build
-RUN mkdir -p /root/debbuild/opt/opsview/monitoringscripts/builtin/plugins/ && \
-    cp /project/target/x86_64-unknown-linux-musl/release/check_jitter /root/debbuild/opt/opsview/monitoringscripts/builtin/plugins/check_jitter && \
-    chmod 4550 /root/debbuild/opt/opsview/monitoringscripts/builtin/plugins/check_jitter && \
-    chown root:opsview /root/debbuild/opt/opsview/monitoringscripts/builtin/plugins/check_jitter && \
+RUN grep '^version =' Cargo.toml | awk -F\" '{print $2}' > /tmp/version.txt
+RUN mkdir -p /root/debbuild/usr/bin/ && \
+    mkdir -p /root/debbuild/opt/itrs/infrastructure-agent/cfg/ && \
+    cp check_jitter /root/debbuild/usr/bin/check_jitter && \
+    chown root:root /root/debbuild/usr/bin/check_jitter && \
+    chmod 755 /root/debbuild/usr/bin/check_jitter && \
+    cp -r /project/opt/itrs/infrastructure-agent/cfg/check_jitter.yml /root/debbuild/opt/itrs/infrastructure-agent/cfg/check_jitter.yml && \
+    chown root:root /root/debbuild/opt/itrs/infrastructure-agent/cfg/check_jitter.yml && \
+    chmod 400 /root/debbuild/opt/itrs/infrastructure-agent/cfg/check_jitter.yml && \
     version=$(cat /tmp/version.txt) && \
     sed -i "s/{{VERSION}}/$version/" /root/debbuild/DEBIAN/control.template && \
     mv /root/debbuild/DEBIAN/control.template /root/debbuild/DEBIAN/control && \
     dpkg-deb --build /root/debbuild && \
-    cp /root/debbuild.deb /check-jitter-opsview_$version-1_amd64.deb
+    cp /root/debbuild.deb /opsview-check-jitter_$version-1_amd64.deb
+
+COPY rhel /project/rhel/
+RUN version=$(cat /tmp/version.txt) && \
+    mkdir -p /root/rpmbuild/{SPECS,SOURCES} && \
+    mkdir -p /tmp/opsview-check-jitter-$version && \
+    cp rhel/opsview-check-jitter.spec.template /root/rpmbuild/SPECS/opsview-check-jitter.spec && \
+    cp Cargo.toml /tmp/opsview-check-jitter-$version/ && \
+    cp rustfmt.toml /tmp/opsview-check-jitter-$version/ && \
+    cp -r src /tmp/opsview-check-jitter-$version/ && \
+    cp -r opt /tmp/opsview-check-jitter-$version/ && \
+    tar czvf /root/rpmbuild/SOURCES/opsview-check-jitter-$version.tar.gz -C /tmp opsview-check-jitter-$version && \
+    sed -i "s/{{VERSION}}/$version/" /root/rpmbuild/SPECS/opsview-check-jitter.spec && \
+    sed -i "s/{{RELEASE_DIR}}/\/project/" /root/rpmbuild/SPECS/opsview-check-jitter.spec && \
+    sed -i "s/{{CFG_DIR}}/\/project\/opt\/itrs\/infrastructure-agent\/cfg/" /root/rpmbuild/SPECS/opsview-check-jitter.spec && \
+    rpmbuild -bb /root/rpmbuild/SPECS/opsview-check-jitter.spec && \
+    cp /root/rpmbuild/RPMS/x86_64/opsview-check-jitter-*.x86_64.rpm /opsview-check-jitter-$version-1.x86_64.rpm
 
 FROM scratch AS bin
-COPY --from=build /project/target/x86_64-unknown-linux-musl/release/check_jitter /check_jitter-x86_64-unknown-linux-musl
-COPY --from=build /check-jitter-opsview-*.x86_64.rpm /
-COPY --from=build /check-jitter-opsview_*.deb /
+COPY --from=build /project/check_jitter /check_jitter-x86_64-unknown-linux-musl
+COPY --from=build /opsview-check-jitter-*.x86_64.rpm /
+COPY --from=build /opsview-check-jitter_*.deb /

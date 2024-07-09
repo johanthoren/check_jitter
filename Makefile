@@ -14,7 +14,7 @@ clean:
 	rm -rf target
 	rm -f check_jitter-x86_64-unknown-linux-musl
 	rm -f check_jitter-x86_64-pc-windows-gnu.exe
-	rm -f check-jitter*.rpm
-	rm -f check-jitter*.deb
+	rm -f opsview-check-jitter*.rpm
+	rm -f opsview-check-jitter*.deb
 	rm -f check_jitter
 	rm -f check-jitter

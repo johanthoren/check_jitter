@@ -1,0 +1,3 @@
+commands:
+  check_jitter:
+    path: '/usr/bin/check_jitter $ARG1$'
