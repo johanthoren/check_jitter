@@ -13,6 +13,12 @@ Requires: libcap selinux-policy infrastructure-agent
 %description
 A Nagios compatible Opsview plugin to measure network jitter.
 
+%define _agentdir /opt/itrs/infrastructure-agent
+%define _plugindir %{_agentdir}/plugins
+%define _cfgdir %{_agentdir}/cfg
+%define _bin check_jitter
+%define _selinuxdir %{_datadir}/selinux/packages/%{name}
+
 %prep
 %setup -q
 
@@ -20,18 +26,44 @@ A Nagios compatible Opsview plugin to measure network jitter.
 # Build steps are already handled outside the spec file.
 
 %install
-mkdir -p %{buildroot}/usr/bin
-install -D -m 0755 {{RELEASE_DIR}}/check_jitter %{buildroot}/usr/bin/check_jitter
-mkdir -p %{buildroot}/opt/itrs/infrastructure-agent/cfg
-install -D -m 0440 {{CFG_DIR}}/check_jitter.yml %{buildroot}/opt/itrs/infrastructure-agent/cfg/check_jitter.yml
+mkdir -p %{buildroot}%{_plugindir}
+install -D -m 0550 {{RELEASE_DIR}}/%{_bin} %{buildroot}%{_plugindir}/%{_bin}
+mkdir -p %{buildroot}%{_cfgdir}
+install -D -m 0440 {{CFG_DIR}}/check_jitter.yml %{buildroot}%{_cfgdir}/check_jitter.yml
+mkdir -p %{buildroot}%{_selinuxdir}
+install -p -m 644 {{SELINUX_DIR}}/check_jitter.te %{buildroot}%{_selinuxdir}/check_jitter.te
 
 %post
-/sbin/setcap cap_net_raw+ep /usr/bin/check_jitter || :
-# Handle systems without setcap or where setcap is not permitted
-if [ $? -ne 0 ]; then
-    echo "Warning: setcap failed. Make sure /usr/bin/check_jitter has the necessary capabilities."
+# Compile and load the SELinux policy module
+checkmodule -M -m -o /tmp/check_jitter.mod %{_selinuxdir}/check_jitter.te
+semodule_package -o /tmp/check_jitter.pp -m /tmp/check_jitter.mod
+semodule -i /tmp/check_jitter.pp
+
+# Set or modify the SELinux file context for the binary
+semanage fcontext -a -t ping_exec_t "%{_plugindir}/%{_bin}" 2>/dev/null || semanage fcontext -m -t ping_exec_t "%{_plugindir}/%{_bin}"
+restorecon -v "%{_plugindir}/%{_bin}"
+
+# Set the capabilities on the binary
+setcap cap_net_raw+ep "%{_plugindir}/%{_bin}"
+
+# Restart the infrastructure-agent service after install or upgrade
+if [ $1 -eq 1 ] || [ $1 -eq 2 ] ; then
+    systemctl restart infrastructure-agent.service
+fi
+
+%postun
+if [ $1 -eq 0 ]; then
+    # Remove the SELinux file context when the package is removed
+    semanage fcontext -d "%{_plugindir}/%{_bin}"
+    # Remove the capabilities from the binary
+    setcap -r "%{_plugindir}/%{_bin}"
+fi
+# Restart the infrastructure-agent service after removal
+if [ $1 -ge 1 ] ; then
+    systemctl restart infrastructure-agent.service
 fi
 
 %files
-%attr(0755, root, root) /usr/bin/check_jitter
-%attr(0440, root, root) /opt/itrs/infrastructure-agent/cfg/check_jitter.yml
+%attr(0550, root, root) %{_plugindir}/%{_bin}
+%attr(0440, root, root) %{_cfgdir}/check_jitter.yml
+%attr(0440, root, root) %{_selinuxdir}/check_jitter.te

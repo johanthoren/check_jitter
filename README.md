@@ -149,7 +149,7 @@ Use together with NRPE or similar, preferably with
 [Opsview](https://www.itrsgroup.com/products/infrastructure-monitoring).
 
 Note that the plugin requires elevated permissions, so you will have to use
-`setuid` or similar.
+`setuid` or `setcap cap_net_raw+ep` on the binary.
 
 ## License
 

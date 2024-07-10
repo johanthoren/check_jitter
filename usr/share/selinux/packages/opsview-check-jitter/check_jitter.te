@@ -1,0 +1,12 @@
+module check_jitter 1.0;
+
+require {
+    type ping_exec_t;
+    type unconfined_t;
+    class file { execute execute_no_trans getattr open read };
+}
+
+# No need to define new types, we'll use ping_exec_t
+
+# Allow unconfined_t to execute check_jitter
+allow unconfined_t ping_exec_t:file { getattr open read execute execute_no_trans };

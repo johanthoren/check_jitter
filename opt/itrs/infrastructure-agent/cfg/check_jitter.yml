@@ -1,3 +1,3 @@
 commands:
   check_jitter:
-    path: '/usr/bin/check_jitter $ARG1$'
+    path: '/opt/itrs/infrastructure-agent/plugins/check_jitter $ARG1$'

@@ -1,10 +1,21 @@
 #!/bin/sh
-# Post-installation script for setting capabilities
+PLUGINS_DIR=/opt/itrs/infrastructure-agent/plugins
+PLUGIN_NAME=check_jitter
+PLUGIN_PATH="$PLUGINS_DIR/$PLUGIN_NAME"
 
 if command -v setcap >/dev/null 2>&1; then
-    setcap cap_net_raw+ep /usr/bin/check_jitter || echo "Warning: setcap failed. Make sure /usr/bin/check_jitter has the necessary capabilities."
+    setcap cap_net_raw+ep "${PLUGIN_PATH}" || \
+        echo "Warning: setcap failed. Make ${PLUGIN_PATH} has the necessary capabilities."
 else
-    echo "Warning: setcap not found. Make sure /usr/bin/check_jitter has the necessary capabilities."
+    echo "Warning: setcap not found. Make sure ${PLUGIN_PATH} has the necessary capabilities."
 fi
+
+case "$1" in
+    configure)
+        systemctl restart infrastructure-agent.service || true
+    ;;
+esac
+
+#DEBHELPER#
 
 exit 0

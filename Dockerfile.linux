@@ -21,10 +21,10 @@ COPY debian/DEBIAN/ /root/debbuild/DEBIAN/
 
 RUN grep '^version =' Cargo.toml | awk -F\" '{print $2}' > /tmp/version.txt
 RUN mkdir -p /root/debbuild/usr/bin/ && \
-    mkdir -p /root/debbuild/opt/itrs/infrastructure-agent/cfg/ && \
-    cp check_jitter /root/debbuild/usr/bin/check_jitter && \
-    chown root:root /root/debbuild/usr/bin/check_jitter && \
-    chmod 755 /root/debbuild/usr/bin/check_jitter && \
+    mkdir -p /root/debbuild/opt/itrs/infrastructure-agent/{cfg,plugins} && \
+    cp check_jitter /root/debbuild/opt/itrs/infrastructure-agent/plugins/check_jitter && \
+    chown root:root /root/debbuild/opt/itrs/infrastructure-agent/plugins/check_jitter && \
+    chmod 550 /root/debbuild/opt/itrs/infrastructure-agent/plugins/check_jitter && \
     cp -r /project/opt/itrs/infrastructure-agent/cfg/check_jitter.yml /root/debbuild/opt/itrs/infrastructure-agent/cfg/check_jitter.yml && \
     chown root:root /root/debbuild/opt/itrs/infrastructure-agent/cfg/check_jitter.yml && \
     chmod 400 /root/debbuild/opt/itrs/infrastructure-agent/cfg/check_jitter.yml && \
@@ -35,6 +35,7 @@ RUN mkdir -p /root/debbuild/usr/bin/ && \
     cp /root/debbuild.deb /opsview-check-jitter_$version-1_amd64.deb
 
 COPY rhel /project/rhel/
+COPY usr /project/usr/
 RUN version=$(cat /tmp/version.txt) && \
     mkdir -p /root/rpmbuild/{SPECS,SOURCES} && \
     mkdir -p /tmp/opsview-check-jitter-$version && \
@@ -43,10 +44,12 @@ RUN version=$(cat /tmp/version.txt) && \
     cp rustfmt.toml /tmp/opsview-check-jitter-$version/ && \
     cp -r src /tmp/opsview-check-jitter-$version/ && \
     cp -r opt /tmp/opsview-check-jitter-$version/ && \
+    cp -r usr /tmp/opsview-check-jitter-$version/ && \
     tar czvf /root/rpmbuild/SOURCES/opsview-check-jitter-$version.tar.gz -C /tmp opsview-check-jitter-$version && \
     sed -i "s/{{VERSION}}/$version/" /root/rpmbuild/SPECS/opsview-check-jitter.spec && \
     sed -i "s/{{RELEASE_DIR}}/\/project/" /root/rpmbuild/SPECS/opsview-check-jitter.spec && \
     sed -i "s/{{CFG_DIR}}/\/project\/opt\/itrs\/infrastructure-agent\/cfg/" /root/rpmbuild/SPECS/opsview-check-jitter.spec && \
+    sed -i "s/{{SELINUX_DIR}}/\/project\/usr\/share\/selinux\/packages\/opsview-check-jitter/" /root/rpmbuild/SPECS/opsview-check-jitter.spec && \
     rpmbuild -bb /root/rpmbuild/SPECS/opsview-check-jitter.spec && \
     cp /root/rpmbuild/RPMS/x86_64/opsview-check-jitter-*.x86_64.rpm /opsview-check-jitter-$version-1.x86_64.rpm
 
