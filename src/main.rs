@@ -98,7 +98,7 @@ struct Args {
     verbose: u8,
 }
 
-fn exit_with_message(status: Status) {
+fn exit_with_message(status: Status) -> ! {
     println!("{}", status);
     process::exit(status.to_int());
 }
@@ -159,7 +159,15 @@ fn setup_logger((level, include_file_info): (LevelFilter, bool)) -> Result<(), f
 
 /// Check network jitter.
 fn main() {
-    let args = Args::parse();
+    // According to monitoring-plugins guidelines, exit code 3 is used for "UNKNOWN" and
+    // should be used for the --help and --version flags.
+    let args = Args::try_parse().unwrap_or_else(|e| match e.kind() {
+        clap::error::ErrorKind::DisplayHelp | clap::error::ErrorKind::DisplayVersion => {
+            print!("{}", e);
+            std::process::exit(3);
+        }
+        _ => exit_with_message(Status::Unknown(UnkownVariant::ClapError(e.to_string()))),
+    });
 
     if let Err(e) = select_and_init_logger(args.verbose) {
         exit_with_message(Status::Unknown(UnkownVariant::FailedToInitLogger(

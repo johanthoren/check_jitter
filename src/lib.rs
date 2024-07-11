@@ -114,6 +114,7 @@ pub enum UnkownVariant {
     FailedToInitLogger(String),
     InvalidAddr(String),
     InvalidMinMaxInterval(u64, u64),
+    ClapError(String),
     NoThresholds,
     RangeParseError(String, nagios_range::Error),
     Timeout(Duration),
@@ -244,6 +245,15 @@ impl fmt::Display for Status<'_> {
                     f,
                     "UNKNOWN - Invalid min/max interval: min: {}, max: {}",
                     min, max
+                )
+            }
+            Status::Unknown(UnkownVariant::ClapError(s)) => {
+                let trimmed = s.trim_end();
+                let without_leading_error = trimmed.trim_start_matches("error: ");
+                write!(
+                    f,
+                    "UNKNOWN - Command line parsing produced an error: {}",
+                    without_leading_error,
                 )
             }
             Status::Unknown(UnkownVariant::NoThresholds) => {

@@ -9,7 +9,7 @@ fn test_cli_help() -> Result<(), Box<dyn std::error::Error>> {
     cmd.arg("--help");
 
     cmd.assert()
-        .success()
+        .code(predicate::eq(3))
         .stdout(predicate::str::contains("Usage:"))
         .stdout(predicate::str::contains("Options:"));
 
@@ -23,7 +23,7 @@ fn test_cli_version() -> Result<(), Box<dyn std::error::Error>> {
     cmd.arg("--version");
 
     cmd.assert()
-        .success()
+        .code(predicate::eq(3))
         .stdout(predicate::str::contains(env!("CARGO_PKG_VERSION")));
 
     Ok(())
@@ -34,8 +34,8 @@ fn test_cli_no_args() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("check_jitter")?;
 
     cmd.assert()
-        .failure()
-        .stderr(predicate::str::contains("Usage:"));
+        .code(predicate::eq(3))
+        .stdout(predicate::str::contains("Usage:"));
 
     Ok(())
 }
