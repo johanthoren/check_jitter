@@ -118,8 +118,6 @@ Options:
           Aggregation method to use for multiple samples [default: average]
   -c, --critical <CRITICAL>
           Critical limit for network jitter in milliseconds
-  -d, --debug
-          Enable debug logging
   -H, --host <HOST>
           Hostname or IP address to ping
   -m, --min-interval <MIN_INTERVAL>
@@ -134,6 +132,8 @@ Options:
           Timeout in milliseconds per individual ping check [default: 1000]
   -w, --warning <WARNING>
           Warning limit for network jitter in milliseconds
+  -v, --verbose...
+          Enable verbose output. Use multiple times to increase verbosity (e.g. -vvv)
   -h, --help
           Print help
   -V, --version
