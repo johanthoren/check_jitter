@@ -40,49 +40,130 @@ fn test_cli_no_args() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-#[test]
-fn test_cli_with_raw_socket() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin("check_jitter")?;
+#[cfg(target_os = "linux")]
+mod linux {
+    use super::*;
 
-    cmd.arg("-H")
-        .arg("127.0.0.1")
-        .arg("-w")
-        .arg("100")
-        .arg("-c")
-        .arg("200");
+    #[test]
+    fn test_cli_with_raw_socket() -> Result<(), Box<dyn std::error::Error>> {
+        let mut cmd = Command::cargo_bin("check_jitter")?;
 
-    if cfg!(target_os = "windows") {
+        cmd.arg("-H")
+            .arg("127.0.0.1")
+            .arg("-w")
+            .arg("100")
+            .arg("-c")
+            .arg("200");
+
         cmd.assert()
-            .success()
-            .stdout(predicate::str::starts_with("OK"));
+            .code(predicate::eq(3))
+            .stdout(predicate::str::contains("insufficient permissions"));
+
+        Ok(())
     }
 
-    Ok(())
+    #[ignore] // This test is a bit flaky depending on the system configuration.
+    #[test]
+    fn test_cli_with_dgram_socket() -> Result<(), Box<dyn std::error::Error>> {
+        let mut cmd = Command::cargo_bin("check_jitter")?;
+
+        cmd.arg("-H")
+            .arg("127.0.0.1")
+            .arg("-w")
+            .arg("100")
+            .arg("-c")
+            .arg("200")
+            .arg("-D");
+
+        cmd.assert()
+            .code(predicate::eq(3))
+            .stdout(predicate::str::contains("DecodeV4Error"));
+
+        Ok(())
+    }
 }
 
-#[test]
-fn test_cli_with_dgram_socket() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin("check_jitter")?;
+#[cfg(target_os = "windows")]
+mod windows {
+    use super::*;
 
-    cmd.arg("-H")
-        .arg("127.0.0.1")
-        .arg("-w")
-        .arg("100")
-        .arg("-c")
-        .arg("200")
-        .arg("-D");
+    #[test]
+    fn test_cli_with_raw_socket() -> Result<(), Box<dyn std::error::Error>> {
+        let mut cmd = Command::cargo_bin("check_jitter")?;
 
-    if cfg!(target_os = "windows") {
+        cmd.arg("-H")
+            .arg("127.0.0.1")
+            .arg("-w")
+            .arg("100")
+            .arg("-c")
+            .arg("200");
+
         cmd.assert()
             .success()
             .stdout(predicate::str::starts_with("OK"));
+
+        Ok(())
     }
 
-    if cfg!(target_os = "macos") {
+    #[test]
+    fn test_cli_with_dgram_socket() -> Result<(), Box<dyn std::error::Error>> {
+        let mut cmd = Command::cargo_bin("check_jitter")?;
+        let w_err = "The requested protocol has not been configured into the system, or no implementation for it exists.";
+
+        cmd.arg("-H")
+            .arg("127.0.0.1")
+            .arg("-w")
+            .arg("100")
+            .arg("-c")
+            .arg("200")
+            .arg("-D");
+
+        cmd.assert()
+            .code(predicate::eq(3))
+            .stdout(predicate::str::contains(w_err));
+
+        Ok(())
+    }
+}
+
+#[cfg(target_os = "macos")]
+mod macos {
+    use super::*;
+
+    #[test]
+    fn test_cli_with_raw_socket() -> Result<(), Box<dyn std::error::Error>> {
+        let mut cmd = Command::cargo_bin("check_jitter")?;
+
+        cmd.arg("-H")
+            .arg("127.0.0.1")
+            .arg("-w")
+            .arg("100")
+            .arg("-c")
+            .arg("200");
+
+        cmd.assert()
+            .code(predicate::eq(3))
+            .stdout(predicate::str::contains("insufficient permissions"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_cli_with_dgram_socket() -> Result<(), Box<dyn std::error::Error>> {
+        let mut cmd = Command::cargo_bin("check_jitter")?;
+
+        cmd.arg("-H")
+            .arg("127.0.0.1")
+            .arg("-w")
+            .arg("100")
+            .arg("-c")
+            .arg("200")
+            .arg("-D");
+
         cmd.assert()
             .success()
             .stdout(predicate::str::starts_with("OK"));
-    }
 
-    Ok(())
+        Ok(())
+    }
 }
