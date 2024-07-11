@@ -21,21 +21,25 @@ jobs:
         id: awk
         run: echo "version=$(awk -F\" '/^version/ {print $2}' Cargo.toml)" >> "$GITHUB_OUTPUT"
 
-  test:
-    name: Run Cargo Tests
+  test_linux:
+    name: Test on Linux
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Run tests
+        run: cargo test
 
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-
-      - run: cargo test
+  test_windows:
+    name: Test on Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Run tests
+        run: cargo test
 
   fmt:
     name: Rustfmt
@@ -75,7 +79,7 @@ jobs:
       - clippy
       - fmt
       - security_audit
-      - test
+      - test_linux
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -160,7 +164,7 @@ jobs:
       - clippy
       - fmt
       - security_audit
-      - test
+      - test_windows
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
