@@ -1,7 +1,7 @@
 use check_jitter::*;
 use chrono::Utc;
-use clap::{value_parser, Parser};
-use log::debug;
+use clap::{value_parser, ArgAction::Count, Parser};
+use log::{info, LevelFilter};
 use nagios_range::NagiosRange;
 use std::net::{Ipv4Addr, Ipv6Addr};
 use std::process;
@@ -65,10 +65,6 @@ struct Args {
     #[arg(short, long)]
     critical: Option<String>,
 
-    /// Enable debug logging
-    #[arg(short, long)]
-    debug: bool,
-
     /// Hostname or IP address to ping
     #[arg(long, short = 'H')]
     host: String,
@@ -96,6 +92,10 @@ struct Args {
     /// Warning limit for network jitter in milliseconds
     #[arg(short, long)]
     warning: Option<String>,
+
+    /// Enable verbose output. Use multiple times to increase verbosity (e.g. -vvv)
+    #[arg(short, long, action = Count, value_parser = value_parser!(u8).range(0..=3))]
+    verbose: u8,
 }
 
 fn exit_with_message(status: Status) {
@@ -118,38 +118,42 @@ fn validate_host(s: &str) -> Result<String, CheckJitterError> {
     }
 }
 
-fn setup_logger(debug: bool) -> Result<(), fern::InitError> {
-    if debug {
-        fern::Dispatch::new()
-            .format(move |out, message, record| {
-                out.finish(format_args!(
-                    "{} [{}] [{}] [{}:{}] {}",
-                    Utc::now().format("%Y-%m-%d %H:%M:%S%.3f"),
-                    record.target(),
-                    record.level(),
+fn select_and_init_logger(verbosity: u8) -> Result<(), fern::InitError> {
+    setup_logger(match verbosity {
+        3 => (LevelFilter::Debug, true),
+        2 => (LevelFilter::Info, false),
+        _ => (LevelFilter::Error, false),
+    })
+}
+
+fn setup_logger((level, include_file_info): (LevelFilter, bool)) -> Result<(), fern::InitError> {
+    let dispatch = fern::Dispatch::new()
+        .format(move |out, message, record| {
+            let base_format = format!(
+                "{} [{}] [{}]",
+                Utc::now().format("%Y-%m-%d %H:%M:%S%.3f"),
+                record.target(),
+                record.level()
+            );
+
+            let full_format = if include_file_info {
+                format!(
+                    "{} [{}:{}] {}",
+                    base_format,
                     record.file().unwrap_or("unknown"),
                     record.line().unwrap_or(0),
                     message
-                ))
-            })
-            .level(log::LevelFilter::Debug)
-            .chain(std::io::stderr())
-            .apply()?;
-    } else {
-        fern::Dispatch::new()
-            .format(move |out, message, record| {
-                out.finish(format_args!(
-                    "{} [{}] [{}] {}",
-                    Utc::now().format("%Y-%m-%d %H:%M:%S%.3f"),
-                    record.target(),
-                    record.level(),
-                    message
-                ))
-            })
-            .level(log::LevelFilter::Info)
-            .chain(std::io::stderr())
-            .apply()?;
-    }
+                )
+            } else {
+                format!("{} {}", base_format, message)
+            };
+
+            out.finish(format_args!("{}", full_format))
+        })
+        .level(level)
+        .chain(std::io::stderr());
+
+    dispatch.apply()?;
     Ok(())
 }
 
@@ -157,7 +161,7 @@ fn setup_logger(debug: bool) -> Result<(), fern::InitError> {
 fn main() {
     let args = Args::parse();
 
-    if let Err(e) = setup_logger(args.debug) {
+    if let Err(e) = select_and_init_logger(args.verbose) {
         exit_with_message(Status::Unknown(UnkownVariant::FailedToInitLogger(
             e.to_string(),
         )))
@@ -197,21 +201,21 @@ fn main() {
     let thresholds = Thresholds { warning, critical };
     let timeout = Duration::from_millis(args.timeout);
 
-    debug!("{:<34}{}", "Will check jitter for host:", args.host);
-    debug!("{:<34}{}", "Aggregation method:", args.aggregation_method);
-    debug!("{:<34}{}", "Samples to send:", args.samples);
-    debug!("{:<34}{}ms", "Timeout per ping:", args.timeout);
-    debug!(
+    info!("{:<34}{}", "Will check jitter for host:", args.host);
+    info!("{:<34}{}", "Aggregation method:", args.aggregation_method);
+    info!("{:<34}{}", "Samples to send:", args.samples);
+    info!("{:<34}{}ms", "Timeout per ping:", args.timeout);
+    info!(
         "{:<34}{}ms",
         "Minimum wait time between pings:", args.min_interval
     );
-    debug!(
+    info!(
         "{:<34}{}ms",
         "Maximum wait time between pings:", args.max_interval
     );
-    debug!("{:<34}{}", "Decimal precision:", args.precision);
-    debug!("{:<34}{:?}", "Warning threshold:", warning);
-    debug!("{:<34}{:?}", "Critical threshold:", critical);
+    info!("{:<34}{}", "Decimal precision:", args.precision);
+    info!("{:<34}{:?}", "Warning threshold:", warning);
+    info!("{:<34}{:?}", "Critical threshold:", critical);
 
     match get_jitter(
         args.aggregation_method,

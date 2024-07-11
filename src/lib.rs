@@ -1,4 +1,4 @@
-use log::{debug, error};
+use log::{debug, error, info};
 use nagios_range::NagiosRange;
 use rand::Rng;
 use std::fmt;
@@ -942,28 +942,29 @@ pub fn evaluate_thresholds(
     value: f64,
     thresholds: &Thresholds,
 ) -> Status {
+    info!("Evaluating jitter: {:?}", value);
     if let Some(c) = thresholds.critical {
-        debug!("Checking critical threshold: {:?}", c);
+        info!("Checking critical threshold: {:?}", c);
         if c.check(value) {
-            debug!("Jitter is critical: {:?}", value);
+            info!("Jitter is critical: {:?}", value);
             return Status::Critical(aggr_method, value, thresholds);
         } else {
-            debug!("Jitter is not critical: {:?}", value);
+            info!("Jitter is not critical: {:?}", value);
         }
     } else {
-        debug!("No critical threshold provided");
+        info!("No critical threshold provided");
     }
 
     if let Some(w) = thresholds.warning {
-        debug!("Checking warning threshold: {:?}", w);
+        info!("Checking warning threshold: {:?}", w);
         if w.check(value) {
-            debug!("Jitter is warning: {:?}", value);
+            info!("Jitter is warning: {:?}", value);
             return Status::Warning(aggr_method, value, thresholds);
         } else {
-            debug!("Jitter is not warning: {:?}", value);
+            info!("Jitter is not warning: {:?}", value);
         }
     } else {
-        debug!("No warning threshold provided");
+        info!("No warning threshold provided");
     }
 
     Status::Ok(aggr_method, value, thresholds)
