@@ -39,3 +39,50 @@ fn test_cli_no_args() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn test_cli_with_raw_socket() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("check_jitter")?;
+
+    cmd.arg("-H")
+        .arg("127.0.0.1")
+        .arg("-w")
+        .arg("100")
+        .arg("-c")
+        .arg("200");
+
+    if cfg!(target_os = "windows") {
+        cmd.assert()
+            .success()
+            .stdout(predicate::str::starts_with("OK"));
+    }
+
+    Ok(())
+}
+
+#[test]
+fn test_cli_with_dgram_socket() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("check_jitter")?;
+
+    cmd.arg("-H")
+        .arg("127.0.0.1")
+        .arg("-w")
+        .arg("100")
+        .arg("-c")
+        .arg("200")
+        .arg("-D");
+
+    if cfg!(target_os = "windows") {
+        cmd.assert()
+            .success()
+            .stdout(predicate::str::starts_with("OK"));
+    }
+
+    if cfg!(target_os = "macos") {
+        cmd.assert()
+            .success()
+            .stdout(predicate::str::starts_with("OK"));
+    }
+
+    Ok(())
+}

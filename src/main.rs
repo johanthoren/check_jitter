@@ -65,6 +65,10 @@ struct Args {
     #[arg(short, long)]
     critical: Option<String>,
 
+    /// Use a datagram socket instead of a raw socket (expert option)
+    #[arg(long, short = 'D')]
+    dgram_socket: bool,
+
     /// Hostname or IP address to ping
     #[arg(long, short = 'H')]
     host: String,
@@ -209,8 +213,15 @@ fn main() {
     let thresholds = Thresholds { warning, critical };
     let timeout = Duration::from_millis(args.timeout);
 
+    let socket_type = if args.dgram_socket {
+        SocketType::Datagram
+    } else {
+        SocketType::Raw
+    };
+
     info!("{:<34}{}", "Will check jitter for host:", args.host);
     info!("{:<34}{}", "Aggregation method:", args.aggregation_method);
+    info!("{:<34}{}", "Socket type:", socket_type);
     info!("{:<34}{}", "Samples to send:", args.samples);
     info!("{:<34}{}ms", "Timeout per ping:", args.timeout);
     info!(
@@ -228,6 +239,7 @@ fn main() {
     match get_jitter(
         args.aggregation_method,
         &args.host,
+        socket_type,
         args.samples,
         timeout,
         args.precision,

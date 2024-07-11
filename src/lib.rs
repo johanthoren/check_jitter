@@ -7,6 +7,21 @@ use std::thread;
 use std::time::{Duration, SystemTime};
 use thiserror::Error;
 
+#[derive(Debug)]
+pub enum SocketType {
+    Datagram,
+    Raw,
+}
+
+impl fmt::Display for SocketType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            SocketType::Datagram => write!(f, "Datagram"),
+            SocketType::Raw => write!(f, "Raw"),
+        }
+    }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum AggregationMethod {
     Average,
@@ -571,15 +586,20 @@ fn parse_addr(addr: &str) -> Result<IpAddr, CheckJitterError> {
 
 fn run_samples(
     ip: IpAddr,
+    socket_type: SocketType,
     samples: u8,
     timeout: Duration,
     mut intervals: Vec<Duration>,
 ) -> Result<Vec<Duration>, CheckJitterError> {
+    let ping_function = match socket_type {
+        SocketType::Datagram => ping::dgramsock::ping,
+        SocketType::Raw => ping::rawsock::ping,
+    };
     let mut durations = Vec::<Duration>::with_capacity(samples as usize);
     for i in 0..samples {
         let start = SystemTime::now();
         debug!("Ping round {}, start time: {:?}", i + 1, start);
-        match ping::ping(ip, Some(timeout), None, None, None, None) {
+        match ping_function(ip, Some(timeout), None, None, None, None) {
             Ok(_) => {
                 let end = SystemTime::now();
                 debug!("Ping round {}, end time: {:?}", i + 1, end);
@@ -618,6 +638,7 @@ fn run_samples(
 
 fn get_durations(
     addr: &str,
+    socket_type: SocketType,
     samples: u8,
     timeout: Duration,
     min_interval: u64,
@@ -625,7 +646,7 @@ fn get_durations(
 ) -> Result<Vec<Duration>, CheckJitterError> {
     let ip = parse_addr(addr)?;
     let intervals = generate_intervals(samples - 1, min_interval, max_interval);
-    run_samples(ip, samples, timeout, intervals)
+    run_samples(ip, socket_type, samples, timeout, intervals)
 }
 
 fn calculate_deltas(durations: Vec<Duration>) -> Result<Vec<Duration>, CheckJitterError> {
@@ -875,6 +896,7 @@ mod calculate_rounded_jitter_tests {
 /// # Arguments
 /// * `aggr_method` - The aggregation method to use.
 /// * `addr` - The IP address or hostname to ping.
+/// * `socket_type` - The type of socket to use for the ping.
 /// * `samples` - The number of samples (pings) to take.
 /// * `timeout` - The timeout for each ping.
 /// * `precision` - The number of decimal places to round the jitter to.
@@ -887,22 +909,38 @@ mod calculate_rounded_jitter_tests {
 ///
 /// # Example
 /// ```rust,no_run // This example will not run because it requires root privileges.
-/// use check_jitter::{get_jitter, CheckJitterError, AggregationMethod};
+/// use check_jitter::{get_jitter, CheckJitterError, AggregationMethod, SocketType};
 /// use std::time::Duration;
 ///
-/// let jitter = get_jitter(AggregationMethod::Average, "192.168.1.1", 10, Duration::from_secs(1), 3, 10, 100).unwrap();
+/// let jitter = get_jitter(
+///     AggregationMethod::Average,
+///     "192.168.1.1",
+///     SocketType::Raw,
+///     10,
+///     Duration::from_secs(1),
+///     3,
+///     10,
+///     100).unwrap();
 /// println!("Average jitter: {}ms", jitter);
 /// ```
 pub fn get_jitter(
     aggr_method: AggregationMethod,
     addr: &str,
+    socket_type: SocketType,
     samples: u8,
     timeout: Duration,
     precision: u8,
     min_interval: u64,
     max_interval: u64,
 ) -> Result<f64, CheckJitterError> {
-    let durations = get_durations(addr, samples, timeout, min_interval, max_interval)?;
+    let durations = get_durations(
+        addr,
+        socket_type,
+        samples,
+        timeout,
+        min_interval,
+        max_interval,
+    )?;
     let deltas = calculate_deltas(durations)?;
     let jitter = match aggr_method {
         AggregationMethod::Average => calculate_avg_jitter(deltas)?,
