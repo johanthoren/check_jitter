@@ -708,15 +708,7 @@ mod calculate_deltas_tests {
     }
 }
 
-fn round_jitter(j: f64, precision: u8) -> Result<f64, CheckJitterError> {
-    let factor = 10f64.powi(precision as i32);
-    let rounded_avg_jitter = (j * factor).round() / factor;
-    debug!("jitter as rounded f64: {:?}", rounded_avg_jitter);
-
-    Ok(rounded_avg_jitter)
-}
-
-fn calculate_avg_jitter(deltas: Vec<Duration>) -> Result<f64, CheckJitterError> {
+fn calculate_avg_jitter(deltas: Vec<Duration>) -> f64 {
     let total_jitter = deltas.iter().sum::<Duration>();
     debug!("Sum of deltas: {:?}", total_jitter);
 
@@ -726,10 +718,10 @@ fn calculate_avg_jitter(deltas: Vec<Duration>) -> Result<f64, CheckJitterError> 
     let average_float = avg_jitter.as_secs_f64() * 1_000.0;
     debug!("Average jitter as f64: {:?}", average_float);
 
-    Ok(average_float)
+    average_float
 }
 
-fn calculate_median_jitter(deltas: Vec<Duration>) -> Result<f64, CheckJitterError> {
+fn calculate_median_jitter(deltas: Vec<Duration>) -> f64 {
     let mut sorted_deltas = deltas.clone();
     sorted_deltas.sort();
     debug!("Sorted deltas: {:?}", sorted_deltas);
@@ -750,7 +742,7 @@ fn calculate_median_jitter(deltas: Vec<Duration>) -> Result<f64, CheckJitterErro
     };
     debug!("Median jitter as f64: {:?}", median_float);
 
-    Ok(median_float)
+    median_float
 }
 
 fn calculate_max_jitter(deltas: Vec<Duration>) -> Result<f64, CheckJitterError> {
@@ -769,6 +761,15 @@ fn calculate_min_jitter(deltas: Vec<Duration>) -> Result<f64, CheckJitterError> 
     debug!("Min jitter as f64: {:?}", min_float);
 
     Ok(min_float)
+}
+
+/// Round the jitter to the specified precision.
+pub fn round_jitter(j: f64, precision: u8) -> f64 {
+    let factor = 10f64.powi(precision as i32);
+    let rounded_jitter = (j * factor).round() / factor;
+    debug!("jitter as rounded f64: {:?}", rounded_jitter);
+
+    rounded_jitter
 }
 
 #[cfg(test)]
@@ -797,14 +798,14 @@ mod calculate_rounded_jitter_tests {
         let expected_min_jitter = 0.1;
         let deltas = calculate_deltas(simple_durations).unwrap();
         println!("{:#?}", deltas.clone());
-        let average_jitter = calculate_avg_jitter(deltas.clone()).unwrap();
-        let median_jitter = calculate_median_jitter(deltas.clone()).unwrap();
+        let average_jitter = calculate_avg_jitter(deltas.clone());
+        let median_jitter = calculate_median_jitter(deltas.clone());
         let max_jitter = calculate_max_jitter(deltas.clone()).unwrap();
         let min_jitter = calculate_min_jitter(deltas).unwrap();
-        let rounded_average_jitter = round_jitter(average_jitter, 3).unwrap();
-        let rounded_median_jitter = round_jitter(median_jitter, 3).unwrap();
-        let rounded_max_jitter = round_jitter(max_jitter, 3).unwrap();
-        let rounded_min_jitter = round_jitter(min_jitter, 3).unwrap();
+        let rounded_average_jitter = round_jitter(average_jitter, 3);
+        let rounded_median_jitter = round_jitter(median_jitter, 3);
+        let rounded_max_jitter = round_jitter(max_jitter, 3);
+        let rounded_min_jitter = round_jitter(min_jitter, 3);
 
         assert_eq!(rounded_average_jitter, expected_average_jitter);
         assert_eq!(rounded_median_jitter, expected_median_jitter);
@@ -833,14 +834,14 @@ mod calculate_rounded_jitter_tests {
         let expected_min_jitter = 0.009_501;
         let deltas = calculate_deltas(irregular_durations).unwrap();
         println!("{:#?}", deltas.clone());
-        let average_jitter = calculate_avg_jitter(deltas.clone()).unwrap();
-        let median_jitter = calculate_median_jitter(deltas.clone()).unwrap();
+        let average_jitter = calculate_avg_jitter(deltas.clone());
+        let median_jitter = calculate_median_jitter(deltas.clone());
         let max_jitter = calculate_max_jitter(deltas.clone()).unwrap();
         let min_jitter = calculate_min_jitter(deltas).unwrap();
-        let rounded_average_jitter = round_jitter(average_jitter, 6).unwrap();
-        let rounded_median_jitter = round_jitter(median_jitter, 6).unwrap();
-        let rounded_max_jitter = round_jitter(max_jitter, 6).unwrap();
-        let rounded_min_jitter = round_jitter(min_jitter, 6).unwrap();
+        let rounded_average_jitter = round_jitter(average_jitter, 6);
+        let rounded_median_jitter = round_jitter(median_jitter, 6);
+        let rounded_max_jitter = round_jitter(max_jitter, 6);
+        let rounded_min_jitter = round_jitter(min_jitter, 6);
 
         assert_eq!(rounded_average_jitter, expected_average_jitter);
         assert_eq!(rounded_median_jitter, expected_median_jitter);
@@ -868,14 +869,14 @@ mod calculate_rounded_jitter_tests {
         let expected_min_jitter = 0.009_501;
         let deltas = calculate_deltas(irregular_durations).unwrap();
         println!("{:#?}", deltas.clone());
-        let average_jitter = calculate_avg_jitter(deltas.clone()).unwrap();
-        let median_jitter = calculate_median_jitter(deltas.clone()).unwrap();
+        let average_jitter = calculate_avg_jitter(deltas.clone());
+        let median_jitter = calculate_median_jitter(deltas.clone());
         let max_jitter = calculate_max_jitter(deltas.clone()).unwrap();
         let min_jitter = calculate_min_jitter(deltas).unwrap();
-        let rounded_average_jitter = round_jitter(average_jitter, 6).unwrap();
-        let rounded_median_jitter = round_jitter(median_jitter, 6).unwrap();
-        let rounded_max_jitter = round_jitter(max_jitter, 6).unwrap();
-        let rounded_min_jitter = round_jitter(min_jitter, 6).unwrap();
+        let rounded_average_jitter = round_jitter(average_jitter, 6);
+        let rounded_median_jitter = round_jitter(median_jitter, 6);
+        let rounded_max_jitter = round_jitter(max_jitter, 6);
+        let rounded_min_jitter = round_jitter(min_jitter, 6);
 
         assert_eq!(rounded_average_jitter, expected_average_jitter);
         assert_eq!(rounded_median_jitter, expected_median_jitter);
@@ -899,7 +900,6 @@ mod calculate_rounded_jitter_tests {
 /// * `socket_type` - The type of socket to use for the ping.
 /// * `samples` - The number of samples (pings) to take.
 /// * `timeout` - The timeout for each ping.
-/// * `precision` - The number of decimal places to round the jitter to.
 /// * `min_interval` - The minimum interval between pings in milliseconds.
 /// * `max_interval` - The maximum interval between pings in milliseconds.
 ///
@@ -913,14 +913,13 @@ mod calculate_rounded_jitter_tests {
 /// use std::time::Duration;
 ///
 /// let jitter = get_jitter(
-///     AggregationMethod::Average,
-///     "192.168.1.1",
-///     SocketType::Raw,
-///     10,
-///     Duration::from_secs(1),
-///     3,
-///     10,
-///     100).unwrap();
+///     AggregationMethod::Average, // aggr_method
+///     "192.168.1.1",              // addr
+///     SocketType::Raw,            // socket_type
+///     10,                         // samples
+///     Duration::from_secs(1),     // timeout
+///     10,                         // min_interval
+///     100).unwrap();              // max_interval
 /// println!("Average jitter: {}ms", jitter);
 /// ```
 pub fn get_jitter(
@@ -929,7 +928,6 @@ pub fn get_jitter(
     socket_type: SocketType,
     samples: u8,
     timeout: Duration,
-    precision: u8,
     min_interval: u64,
     max_interval: u64,
 ) -> Result<f64, CheckJitterError> {
@@ -942,13 +940,12 @@ pub fn get_jitter(
         max_interval,
     )?;
     let deltas = calculate_deltas(durations)?;
-    let jitter = match aggr_method {
-        AggregationMethod::Average => calculate_avg_jitter(deltas)?,
-        AggregationMethod::Median => calculate_median_jitter(deltas)?,
-        AggregationMethod::Max => calculate_max_jitter(deltas)?,
-        AggregationMethod::Min => calculate_min_jitter(deltas)?,
-    };
-    round_jitter(jitter, precision)
+    match aggr_method {
+        AggregationMethod::Average => Ok(calculate_avg_jitter(deltas)),
+        AggregationMethod::Median => Ok(calculate_median_jitter(deltas)),
+        AggregationMethod::Max => calculate_max_jitter(deltas),
+        AggregationMethod::Min => calculate_min_jitter(deltas),
+    }
 }
 
 /// Evaluate the jitter against the thresholds and return the appropriate status.

@@ -236,21 +236,22 @@ fn main() {
     info!("{:<34}{:?}", "Warning threshold:", warning);
     info!("{:<34}{:?}", "Critical threshold:", critical);
 
-    match get_jitter(
+    let raw_jitter = match get_jitter(
         args.aggregation_method,
         &args.host,
         socket_type,
         args.samples,
         timeout,
-        args.precision,
         args.min_interval,
         args.max_interval,
     ) {
-        Ok(jitter) => exit_with_message(evaluate_thresholds(
-            args.aggregation_method,
-            jitter,
-            &thresholds,
-        )),
+        Ok(jitter) => jitter,
         Err(e) => exit_with_message(Status::Unknown(UnkownVariant::Error(e))),
     };
+
+    exit_with_message(evaluate_thresholds(
+        args.aggregation_method,
+        round_jitter(raw_jitter, args.precision),
+        &thresholds,
+    ))
 }
