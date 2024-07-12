@@ -129,7 +129,7 @@ Options:
   -p, --precision <PRECISION>
           Precision of the output decimal places [default: 3]
   -s, --samples <SAMPLES>
-          Number of pings to send [default: 10]
+          Sample size: the number of pings to send [default: 10]
   -t, --timeout <TIMEOUT>
           Timeout in milliseconds per individual ping check [default: 1000]
   -w, --warning <WARNING>

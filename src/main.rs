@@ -85,7 +85,7 @@ struct Args {
     #[arg(short, long, default_value = "3")]
     precision: u8,
 
-    /// Number of pings to send
+    /// Sample size: the number of pings to send
     #[arg(short, long, default_value = "10", value_parser = value_parser!(u8).range(3..))]
     samples: u8,
 
@@ -222,7 +222,7 @@ fn main() {
     info!("{:<34}{}", "Will check jitter for host:", args.host);
     info!("{:<34}{}", "Aggregation method:", args.aggregation_method);
     info!("{:<34}{}", "Socket type:", socket_type);
-    info!("{:<34}{}", "Samples to send:", args.samples);
+    info!("{:<34}{}", "Sample size:", args.samples);
     info!("{:<34}{}ms", "Timeout per ping:", args.timeout);
     info!(
         "{:<34}{}ms",

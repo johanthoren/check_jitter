@@ -106,6 +106,38 @@ mod windows {
     }
 
     #[test]
+    fn test_cli_with_raw_socket_verbose_median() -> Result<(), Box<dyn std::error::Error>> {
+        let mut cmd = Command::cargo_bin("check_jitter")?;
+
+        cmd.arg("-H")
+            .arg("127.0.0.1")
+            .arg("-w")
+            .arg("300")
+            .arg("-c")
+            .arg("500")
+            .arg("-a")
+            .arg("median")
+            .arg("-p")
+            .arg("5")
+            .arg("-s")
+            .arg("3")
+            .arg("-t")
+            .arg("100")
+            .arg("-vvv");
+
+        cmd.assert()
+            .success()
+            .stderr(predicate::str::is_match("Aggregation method: +Median").unwrap())
+            .stderr(predicate::str::is_match("Socket type: +Datagram").unwrap())
+            .stderr(predicate::str::is_match("Decimal precision: +5").unwrap())
+            .stderr(predicate::str::is_match("Sample size: +3").unwrap())
+            .stderr(predicate::str::is_match("Timeout per ping: +100ms").unwrap())
+            .stdout(predicate::str::starts_with("OK - Median Jitter:"));
+
+        Ok(())
+    }
+
+    #[test]
     fn test_cli_with_dgram_socket() -> Result<(), Box<dyn std::error::Error>> {
         let mut cmd = Command::cargo_bin("check_jitter")?;
         let w_err = "The requested protocol has not been configured into the system, or no implementation for it exists.";
@@ -162,7 +194,40 @@ mod macos {
 
         cmd.assert()
             .success()
-            .stdout(predicate::str::starts_with("OK"));
+            .stdout(predicate::str::starts_with("OK - Average Jitter:"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_cli_with_dgram_socket_verbose_median() -> Result<(), Box<dyn std::error::Error>> {
+        let mut cmd = Command::cargo_bin("check_jitter")?;
+
+        cmd.arg("-H")
+            .arg("127.0.0.1")
+            .arg("-D")
+            .arg("-w")
+            .arg("300")
+            .arg("-c")
+            .arg("500")
+            .arg("-a")
+            .arg("median")
+            .arg("-p")
+            .arg("5")
+            .arg("-s")
+            .arg("3")
+            .arg("-t")
+            .arg("100")
+            .arg("-vvv");
+
+        cmd.assert()
+            .success()
+            .stderr(predicate::str::is_match("Aggregation method: +Median").unwrap())
+            .stderr(predicate::str::is_match("Socket type: +Datagram").unwrap())
+            .stderr(predicate::str::is_match("Decimal precision: +5").unwrap())
+            .stderr(predicate::str::is_match("Sample size: +3").unwrap())
+            .stderr(predicate::str::is_match("Timeout per ping: +100ms").unwrap())
+            .stdout(predicate::str::starts_with("OK - Median Jitter:"));
 
         Ok(())
     }
