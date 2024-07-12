@@ -1,6 +1,6 @@
 [package]
 authors = ["Johan Thorén <johan@thoren.xyz>"]
-description = "A Nagios compatible plugin to measure network jitter."
+description = "A monitoring plugin that measures network jitter."
 edition = "2021"
 license = "ISC"
 name = "check-jitter"

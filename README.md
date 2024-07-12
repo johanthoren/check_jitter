@@ -65,7 +65,7 @@ The command did not trigger a warning or critical alert because:
 ## Help Text
 
 ``` text
-check_jitter - A Nagios compatible plugin that measures network jitter.
+check_jitter - A monitoring plugin that measures network jitter.
 
 AGGREGATION METHOD
 
@@ -94,7 +94,7 @@ intervals between the two values.
 
 THRESHOLD SYNTAX
 
-Thresholds are defined using Nagios range syntax.
+Thresholds are defined using monitoring plugin range syntax.
 
 Example ranges:
 +------------------+-------------------------------------------------+
@@ -102,13 +102,13 @@ Example ranges:
 +------------------+-------------------------------------------------+
 | 10               | < 0 or > 10, (outside the range of {0 .. 10})   |
 +------------------+-------------------------------------------------+
-| 10:              | < 10, (outside {10 .. ∞})                       |
+| 10:              | < 10, (outside {10 .. ‚àû})                       |
 +------------------+-------------------------------------------------+
-| ~:10             | > 10, (outside the range of {-∞ .. 10})         |
+| ~:10             | > 10, (outside the range of {-‚àû .. 10})         |
 +------------------+-------------------------------------------------+
 | 10:20            | < 10 or > 20, (outside the range of {10 .. 20}) |
 +------------------+-------------------------------------------------+
-| @10:20           | ≥ 10 and ≤ 20, (inside the range of {10 .. 20}) |
+| @10:20           | ‚â• 10 and ‚â§ 20, (inside the range of {10 .. 20}) |
 +------------------+-------------------------------------------------+
 
 Usage: check_jitter [OPTIONS] --host <HOST>
@@ -118,6 +118,8 @@ Options:
           Aggregation method to use for multiple samples [default: average]
   -c, --critical <CRITICAL>
           Critical limit for network jitter in milliseconds
+  -D, --dgram-socket
+          Use a datagram socket instead of a raw socket (expert option)
   -H, --host <HOST>
           Hostname or IP address to ping
   -m, --min-interval <MIN_INTERVAL>

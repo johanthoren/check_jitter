@@ -2,13 +2,13 @@ use check_jitter::*;
 use chrono::Utc;
 use clap::{value_parser, ArgAction::Count, Parser};
 use log::{info, LevelFilter};
-use nagios_range::NagiosRange;
+use nagios_range::NagiosRange as ThresholdRange;
 use std::net::{Ipv4Addr, Ipv6Addr};
 use std::process;
 use std::time::Duration;
 
 const ABOUT_TEXT: &str = r#"
-check_jitter - A Nagios compatible plugin that measures network jitter.
+check_jitter - A monitoring plugin that measures network jitter.
 
 AGGREGATION METHOD
 
@@ -37,7 +37,7 @@ intervals between the two values.
 
 THRESHOLD SYNTAX
 
-Thresholds are defined using Nagios range syntax.
+Thresholds are defined using monitoring plugin range syntax.
 
 Example ranges:
 +------------------+-------------------------------------------------+
@@ -196,15 +196,15 @@ fn main() {
         exit_with_message(Status::Unknown(UnkownVariant::NoThresholds))
     }
 
-    let warning: Option<NagiosRange> = match args.warning {
-        Some(w) => NagiosRange::from(w.as_str())
+    let warning: Option<ThresholdRange> = match args.warning {
+        Some(w) => ThresholdRange::from(w.as_str())
             .map_err(|e| exit_with_message(Status::Unknown(UnkownVariant::RangeParseError(w, e))))
             .ok(),
         None => None,
     };
 
-    let critical: Option<NagiosRange> = match args.critical {
-        Some(c) => NagiosRange::from(c.as_str())
+    let critical: Option<ThresholdRange> = match args.critical {
+        Some(c) => ThresholdRange::from(c.as_str())
             .map_err(|e| exit_with_message(Status::Unknown(UnkownVariant::RangeParseError(c, e))))
             .ok(),
         None => None,

@@ -1,5 +1,6 @@
 use log::{debug, error, info};
-use nagios_range::NagiosRange;
+use nagios_range::Error as RangeError;
+use nagios_range::NagiosRange as ThresholdRange;
 use rand::Rng;
 use std::fmt;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, ToSocketAddrs};
@@ -118,8 +119,8 @@ impl From<std::io::Error> for CheckJitterError {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Thresholds {
-    pub warning: Option<NagiosRange>,
-    pub critical: Option<NagiosRange>,
+    pub warning: Option<ThresholdRange>,
+    pub critical: Option<ThresholdRange>,
 }
 
 #[non_exhaustive]
@@ -131,7 +132,7 @@ pub enum UnkownVariant {
     InvalidMinMaxInterval(u64, u64),
     ClapError(String),
     NoThresholds,
-    RangeParseError(String, nagios_range::Error),
+    RangeParseError(String, RangeError),
     Timeout(Duration),
 }
 
@@ -163,8 +164,8 @@ mod display_string_tests {
     #[test]
     fn test_with_both_thresholds() {
         let thresholds = Thresholds {
-            warning: Some(NagiosRange::from("0:0.5").unwrap()),
-            critical: Some(NagiosRange::from("0:1").unwrap()),
+            warning: Some(ThresholdRange::from("0:0.5").unwrap()),
+            critical: Some(ThresholdRange::from("0:1").unwrap()),
         };
 
         let expected = "OK - Average Jitter: 0.1ms|'Average Jitter'=0.1ms;0:0.5;0:1;0";
@@ -176,7 +177,7 @@ mod display_string_tests {
     #[test]
     fn test_with_only_warning() {
         let thresholds = Thresholds {
-            warning: Some(NagiosRange::from("0:0.5").unwrap()),
+            warning: Some(ThresholdRange::from("0:0.5").unwrap()),
             critical: None,
         };
 
@@ -190,7 +191,7 @@ mod display_string_tests {
     fn test_with_only_critical() {
         let thresholds = Thresholds {
             warning: None,
-            critical: Some(NagiosRange::from("0:0.5").unwrap()),
+            critical: Some(ThresholdRange::from("0:0.5").unwrap()),
         };
 
         let expected = "OK - Average Jitter: 0.1ms|'Average Jitter'=0.1ms;;0:0.5;0";
@@ -299,8 +300,8 @@ mod status_display_tests {
     #[test]
     fn test_with_ok() {
         let t = Thresholds {
-            warning: Some(NagiosRange::from("0:0.5").unwrap()),
-            critical: Some(NagiosRange::from("0:1").unwrap()),
+            warning: Some(ThresholdRange::from("0:0.5").unwrap()),
+            critical: Some(ThresholdRange::from("0:1").unwrap()),
         };
         let status = Status::Ok(AggregationMethod::Average, 0.1, &t);
         let expected = "OK - Average Jitter: 0.1ms|'Average Jitter'=0.1ms;0:0.5;0:1;0";
@@ -311,11 +312,11 @@ mod status_display_tests {
 
     #[test]
     // The expected value is the same as the previous test, even if the str given to initiate
-    // the NagiosRange is different.
+    // the ThresholdRange is different.
     fn test_with_ok_simple_thresholds() {
         let t = Thresholds {
-            warning: Some(NagiosRange::from("0.5").unwrap()),
-            critical: Some(NagiosRange::from("1").unwrap()),
+            warning: Some(ThresholdRange::from("0.5").unwrap()),
+            critical: Some(ThresholdRange::from("1").unwrap()),
         };
         let status = Status::Ok(AggregationMethod::Median, 0.1, &t);
         let expected = "OK - Median Jitter: 0.1ms|'Median Jitter'=0.1ms;0:0.5;0:1;0";
@@ -327,8 +328,8 @@ mod status_display_tests {
     #[test]
     fn test_with_warning() {
         let t = Thresholds {
-            warning: Some(NagiosRange::from("0:0.5").unwrap()),
-            critical: Some(NagiosRange::from("0:1").unwrap()),
+            warning: Some(ThresholdRange::from("0:0.5").unwrap()),
+            critical: Some(ThresholdRange::from("0:1").unwrap()),
         };
         let status = Status::Warning(AggregationMethod::Average, 0.1, &t);
         let expected = "WARNING - Average Jitter: 0.1ms|'Average Jitter'=0.1ms;0:0.5;0:1;0";
@@ -340,8 +341,8 @@ mod status_display_tests {
     #[test]
     fn test_with_critical() {
         let t = Thresholds {
-            warning: Some(NagiosRange::from("0:0.5").unwrap()),
-            critical: Some(NagiosRange::from("0:1").unwrap()),
+            warning: Some(ThresholdRange::from("0:0.5").unwrap()),
+            critical: Some(ThresholdRange::from("0:1").unwrap()),
         };
         let status = Status::Critical(AggregationMethod::Max, 0.1, &t);
         let expected = "CRITICAL - Max Jitter: 0.1ms|'Max Jitter'=0.1ms;0:0.5;0:1;0";
@@ -964,13 +965,13 @@ pub fn get_jitter(
 /// # Example
 /// ```rust
 /// use check_jitter::{evaluate_thresholds, AggregationMethod, Thresholds, Status};
-/// use nagios_range::NagiosRange;
+/// use nagios_range::NagiosRange as ThresholdRange;
 /// use std::time::Duration;
 ///
 /// let jitter = 0.1;
 /// let thresholds = Thresholds {
-///     warning: Some(NagiosRange::from("0:0.5").unwrap()),
-///     critical: Some(NagiosRange::from("0:1").unwrap()),
+///     warning: Some(ThresholdRange::from("0:0.5").unwrap()),
+///     critical: Some(ThresholdRange::from("0:1").unwrap()),
 /// };
 ///
 /// let status = evaluate_thresholds(AggregationMethod::Average, jitter, &thresholds);

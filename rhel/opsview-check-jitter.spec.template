@@ -1,7 +1,7 @@
 Name: opsview-check-jitter
 Version: {{VERSION}}
 Release: 1%{?dist}
-Summary: A Nagios compatible Opsview plugin to check network jitter
+Summary: A monitoring plugin that measures network jitter
 
 License: ISC
 URL: https://github.com/johanthoren/check_jitter
@@ -11,7 +11,7 @@ Source0: %{name}-%{version}.tar.gz
 Requires: libcap selinux-policy infrastructure-agent
 
 %description
-A Nagios compatible Opsview plugin to measure network jitter.
+A monitoring plugin that measures network jitter.
 
 %define _agentdir /opt/itrs/infrastructure-agent
 %define _plugindir %{_agentdir}/plugins
