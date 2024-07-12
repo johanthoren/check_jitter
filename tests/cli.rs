@@ -128,7 +128,7 @@ mod windows {
         cmd.assert()
             .success()
             .stderr(predicate::str::is_match("Aggregation method: +Median").unwrap())
-            .stderr(predicate::str::is_match("Socket type: +Datagram").unwrap())
+            .stderr(predicate::str::is_match("Socket type: +Raw").unwrap())
             .stderr(predicate::str::is_match("Decimal precision: +5").unwrap())
             .stderr(predicate::str::is_match("Sample size: +3").unwrap())
             .stderr(predicate::str::is_match("Timeout per ping: +100ms").unwrap())
