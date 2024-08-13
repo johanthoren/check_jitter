@@ -909,7 +909,8 @@ mod calculate_rounded_jitter_tests {
 /// specified decimal.
 ///
 /// # Example
-/// ```rust,no_run // This example will not run because it requires root privileges.
+/// ```rust,no_run
+/// // This example will not run because it requires root privileges.
 /// use check_jitter::{get_jitter, CheckJitterError, AggregationMethod, SocketType};
 /// use std::time::Duration;
 ///
