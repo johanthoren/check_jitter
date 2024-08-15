@@ -6,6 +6,3 @@ allow = [
     "MIT",
     "Unicode-DFS-2016",
 ]
-
-[advisories]
-"unmaintained" = "allow"
