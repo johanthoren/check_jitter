@@ -21,13 +21,14 @@ COPY debian/DEBIAN/ /root/debbuild/DEBIAN/
 
 RUN grep '^version =' Cargo.toml | awk -F\" '{print $2}' > /tmp/version.txt
 RUN mkdir -p /root/debbuild/usr/bin/ && \
-    mkdir -p /root/debbuild/opt/itrs/infrastructure-agent/{cfg,plugins} && \
+    mkdir -p /root/debbuild/opt/itrs/infrastructure-agent/plugins && \
+    mkdir -p /root/debbuild/opt/itrs/infrastructure-agent/cfg/custom && \
     cp check_jitter /root/debbuild/opt/itrs/infrastructure-agent/plugins/check_jitter && \
     chown root:root /root/debbuild/opt/itrs/infrastructure-agent/plugins/check_jitter && \
     chmod 550 /root/debbuild/opt/itrs/infrastructure-agent/plugins/check_jitter && \
-    cp -r /project/opt/itrs/infrastructure-agent/cfg/check_jitter.yml /root/debbuild/opt/itrs/infrastructure-agent/cfg/check_jitter.yml && \
-    chown root:root /root/debbuild/opt/itrs/infrastructure-agent/cfg/check_jitter.yml && \
-    chmod 400 /root/debbuild/opt/itrs/infrastructure-agent/cfg/check_jitter.yml && \
+    cp -r /project/opt/itrs/infrastructure-agent/cfg/custom/check_jitter.yml /root/debbuild/opt/itrs/infrastructure-agent/cfg/custom/check_jitter.yml && \
+    chown root:root /root/debbuild/opt/itrs/infrastructure-agent/cfg/custom/check_jitter.yml && \
+    chmod 400 /root/debbuild/opt/itrs/infrastructure-agent/cfg/custom/check_jitter.yml && \
     version=$(cat /tmp/version.txt) && \
     sed -i "s/{{VERSION}}/$version/" /root/debbuild/DEBIAN/control.template && \
     mv /root/debbuild/DEBIAN/control.template /root/debbuild/DEBIAN/control && \

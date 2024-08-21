@@ -15,7 +15,7 @@ A monitoring plugin that measures network jitter.
 
 %define _agentdir /opt/itrs/infrastructure-agent
 %define _plugindir %{_agentdir}/plugins
-%define _cfgdir %{_agentdir}/cfg
+%define _cfgdir %{_agentdir}/cfg/custom
 %define _bin check_jitter
 
 %prep
