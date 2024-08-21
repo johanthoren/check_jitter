@@ -28,7 +28,7 @@ A monitoring plugin that measures network jitter.
 mkdir -p %{buildroot}%{_plugindir}
 install -D -m 0550 {{RELEASE_DIR}}/%{_bin} %{buildroot}%{_plugindir}/%{_bin}
 mkdir -p %{buildroot}%{_cfgdir}
-install -D -m 0440 {{CFG_DIR}}/check_jitter.yml %{buildroot}%{_cfgdir}/check_jitter.yml
+install -D -m 0440 {{CFG_DIR}}/custom/check_jitter.yml %{buildroot}%{_cfgdir}/check_jitter.yml
 
 %post
 # Set the capabilities on the binary
