@@ -170,42 +170,42 @@ fn main() {
             print!("{}", e);
             std::process::exit(3);
         }
-        _ => exit_with_message(Status::Unknown(UnkownVariant::ClapError(e.to_string()))),
+        _ => exit_with_message(Status::Unknown(UnknownVariant::ClapError(e.to_string()))),
     });
 
     if let Err(e) = select_and_init_logger(args.verbose) {
-        exit_with_message(Status::Unknown(UnkownVariant::FailedToInitLogger(
+        exit_with_message(Status::Unknown(UnknownVariant::FailedToInitLogger(
             e.to_string(),
         )))
     }
 
     if args.min_interval > args.max_interval {
-        exit_with_message(Status::Unknown(UnkownVariant::InvalidMinMaxInterval(
+        exit_with_message(Status::Unknown(UnknownVariant::InvalidMinMaxInterval(
             args.min_interval,
             args.max_interval,
         )))
     }
 
     if validate_host(&args.host).is_err() {
-        exit_with_message(Status::Unknown(UnkownVariant::InvalidAddr(
+        exit_with_message(Status::Unknown(UnknownVariant::InvalidAddr(
             args.host.clone(),
         )))
     }
 
     if args.warning.is_none() && args.critical.is_none() {
-        exit_with_message(Status::Unknown(UnkownVariant::NoThresholds))
+        exit_with_message(Status::Unknown(UnknownVariant::NoThresholds))
     }
 
     let warning: Option<ThresholdRange> = match args.warning {
         Some(w) => ThresholdRange::from(w.as_str())
-            .map_err(|e| exit_with_message(Status::Unknown(UnkownVariant::RangeParseError(w, e))))
+            .map_err(|e| exit_with_message(Status::Unknown(UnknownVariant::RangeParseError(w, e))))
             .ok(),
         None => None,
     };
 
     let critical: Option<ThresholdRange> = match args.critical {
         Some(c) => ThresholdRange::from(c.as_str())
-            .map_err(|e| exit_with_message(Status::Unknown(UnkownVariant::RangeParseError(c, e))))
+            .map_err(|e| exit_with_message(Status::Unknown(UnknownVariant::RangeParseError(c, e))))
             .ok(),
         None => None,
     };
@@ -246,7 +246,7 @@ fn main() {
         args.max_interval,
     ) {
         Ok(jitter) => jitter,
-        Err(e) => exit_with_message(Status::Unknown(UnkownVariant::Error(e))),
+        Err(e) => exit_with_message(Status::Unknown(UnknownVariant::Error(e))),
     };
 
     exit_with_message(evaluate_thresholds(

@@ -125,7 +125,7 @@ pub struct Thresholds {
 
 #[non_exhaustive]
 #[derive(Debug, PartialEq)]
-pub enum UnkownVariant {
+pub enum UnknownVariant {
     Error(CheckJitterError),
     FailedToInitLogger(String),
     InvalidAddr(String),
@@ -141,7 +141,7 @@ pub enum Status<'a> {
     Ok(AggregationMethod, f64, &'a Thresholds),
     Warning(AggregationMethod, f64, &'a Thresholds),
     Critical(AggregationMethod, f64, &'a Thresholds),
-    Unknown(UnkownVariant),
+    Unknown(UnknownVariant),
 }
 
 fn display_string(label: &str, status: &str, uom: &str, f: f64, t: &Thresholds) -> String {
@@ -243,27 +243,27 @@ impl fmt::Display for Status<'_> {
             Status::Critical(_, n, t) => {
                 write!(f, "{}", display_string(label, "CRITICAL", uom, *n, t))
             }
-            Status::Unknown(UnkownVariant::Error(e)) => {
+            Status::Unknown(UnknownVariant::Error(e)) => {
                 write!(f, "UNKNOWN - An error occurred: '{}'", e)
             }
-            Status::Unknown(UnkownVariant::FailedToInitLogger(s)) => {
+            Status::Unknown(UnknownVariant::FailedToInitLogger(s)) => {
                 write!(
                     f,
                     "UNKNOWN - Failed to initialize logger with error: '{}'",
                     s
                 )
             }
-            Status::Unknown(UnkownVariant::InvalidAddr(s)) => {
+            Status::Unknown(UnknownVariant::InvalidAddr(s)) => {
                 write!(f, "UNKNOWN - Invalid address or hostname: {}", s)
             }
-            Status::Unknown(UnkownVariant::InvalidMinMaxInterval(min, max)) => {
+            Status::Unknown(UnknownVariant::InvalidMinMaxInterval(min, max)) => {
                 write!(
                     f,
                     "UNKNOWN - Invalid min/max interval: min: {}, max: {}",
                     min, max
                 )
             }
-            Status::Unknown(UnkownVariant::ClapError(s)) => {
+            Status::Unknown(UnknownVariant::ClapError(s)) => {
                 let trimmed = s.trim_end();
                 let without_leading_error = trimmed.trim_start_matches("error: ");
                 write!(
@@ -272,20 +272,20 @@ impl fmt::Display for Status<'_> {
                     without_leading_error,
                 )
             }
-            Status::Unknown(UnkownVariant::NoThresholds) => {
+            Status::Unknown(UnknownVariant::NoThresholds) => {
                 write!(
                     f,
                     "UNKNOWN - No thresholds provided. Provide at least one threshold."
                 )
             }
-            Status::Unknown(UnkownVariant::RangeParseError(s, e)) => {
+            Status::Unknown(UnknownVariant::RangeParseError(s, e)) => {
                 write!(
                     f,
                     "UNKNOWN - Unable to parse range '{}' with error: {}",
                     s, e
                 )
             }
-            Status::Unknown(UnkownVariant::Timeout(d)) => {
+            Status::Unknown(UnknownVariant::Timeout(d)) => {
                 write!(f, "UNKNOWN - Ping timeout occurred after {:?}", d)
             }
         }
@@ -353,7 +353,7 @@ mod status_display_tests {
 
     #[test]
     fn test_with_error() {
-        let status = Status::Unknown(UnkownVariant::Error(CheckJitterError::DnsLookupFailed(
+        let status = Status::Unknown(UnknownVariant::Error(CheckJitterError::DnsLookupFailed(
             "example.com".to_string(),
         )));
 
