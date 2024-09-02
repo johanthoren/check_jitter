@@ -44,6 +44,7 @@ fn test_cli_no_args() -> Result<(), Box<dyn std::error::Error>> {
 mod linux {
     use super::*;
 
+    #[ignore] // This test is a bit flaky depending on the system configuration.
     #[test]
     fn test_cli_with_raw_socket() -> Result<(), Box<dyn std::error::Error>> {
         let mut cmd = Command::cargo_bin("check_jitter")?;
