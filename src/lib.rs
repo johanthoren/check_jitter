@@ -90,7 +90,7 @@ pub enum CheckJitterError {
     EmptyDeltas,
 
     #[error("At least 2 samples are required to calculate jitter, got {0}.")]
-    InsufficientSamples(usize),
+    InsufficientSamples(u8),
 
     #[error("Invalid IP: {0}")]
     InvalidIP(String),
@@ -649,13 +649,18 @@ fn get_durations(
     max_interval: u64,
 ) -> Result<Vec<Duration>, CheckJitterError> {
     let ip = parse_addr(addr)?;
+
+    if samples < 2 {
+        return Err(CheckJitterError::InsufficientSamples(samples));
+    }
+
     let intervals = generate_intervals(samples - 1, min_interval, max_interval);
     run_samples(ip, socket_type, samples, timeout, intervals)
 }
 
 fn calculate_deltas(durations: &[Duration]) -> Result<Vec<Duration>, CheckJitterError> {
     if durations.len() < 2 {
-        return Err(CheckJitterError::InsufficientSamples(durations.len()));
+        return Err(CheckJitterError::InsufficientSamples(durations.len() as u8));
     }
 
     let deltas = durations
