@@ -89,6 +89,9 @@ pub enum CheckJitterError {
     #[error("The delta count is 0. Cannot calculate jitter.")]
     EmptyDeltas,
 
+    #[error("At least 2 samples are required to calculate jitter, got {0}.")]
+    InsufficientSamples(usize),
+
     #[error("Invalid IP: {0}")]
     InvalidIP(String),
 
