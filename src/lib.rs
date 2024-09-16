@@ -653,14 +653,15 @@ fn get_durations(
     run_samples(ip, socket_type, samples, timeout, intervals)
 }
 
-fn calculate_deltas(durations: Vec<Duration>) -> Result<Vec<Duration>, CheckJitterError> {
-    let delta_count: usize = durations.len() - 1;
-    let mut deltas = Vec::<Duration>::with_capacity(delta_count);
-
-    for i in 1..durations.len() {
-        let d = abs_diff_duration(durations[i], durations[i - 1]);
-        deltas.push(d);
+fn calculate_deltas(durations: &[Duration]) -> Result<Vec<Duration>, CheckJitterError> {
+    if durations.len() < 2 {
+        return Err(CheckJitterError::InsufficientSamples(durations.len()));
     }
+
+    let deltas = durations
+        .windows(2)
+        .map(|w| abs_diff_duration(w[0], w[1]))
+        .collect();
 
     debug!("Deltas: {:?}", deltas);
 
@@ -673,15 +674,47 @@ mod calculate_deltas_tests {
     use pretty_assertions::assert_eq;
 
     #[test]
+    fn test_with_zero_durations() {
+        let durations = &[];
+
+        let result = calculate_deltas(durations);
+
+        assert_eq!(result, Err(CheckJitterError::InsufficientSamples(0)));
+    }
+
+    #[test]
+    fn test_with_one_duration() {
+        let durations = &[Duration::from_nanos(100_000_000)];
+
+        let result = calculate_deltas(durations);
+
+        assert_eq!(result, Err(CheckJitterError::InsufficientSamples(1)));
+    }
+
+    #[test]
+    fn test_with_two_durations() {
+        let durations = &[
+            Duration::from_nanos(100_000_000),
+            Duration::from_nanos(100_100_000),
+        ];
+
+        let expected_deltas = vec![Duration::from_nanos(100_000)];
+
+        let deltas = calculate_deltas(durations).unwrap();
+
+        assert_eq!(deltas, expected_deltas);
+    }
+
+    #[test]
     fn test_with_simple_durations() {
-        let durations = vec![
+        let durations = &[
             Duration::from_nanos(100_000_000),
             Duration::from_nanos(100_100_000),
             Duration::from_nanos(100_200_000),
             Duration::from_nanos(100_300_000),
         ];
 
-        let expected_deltas = vec![
+        let expected_deltas = &[
             Duration::from_nanos(100_000),
             Duration::from_nanos(100_000),
             Duration::from_nanos(100_000),
@@ -694,14 +727,14 @@ mod calculate_deltas_tests {
 
     #[test]
     fn test_with_irregular_durations() {
-        let durations = vec![
+        let durations = &[
             Duration::from_nanos(100_000_000),
             Duration::from_nanos(100_101_200),
             Duration::from_nanos(101_200_030),
             Duration::from_nanos(100_310_900),
         ];
 
-        let expected_deltas = vec![
+        let expected_deltas = &[
             Duration::from_nanos(101_200),
             Duration::from_nanos(1_098_830),
             Duration::from_nanos(889_130),
@@ -800,7 +833,7 @@ mod calculate_rounded_jitter_tests {
         let expected_median_jitter = 0.1;
         let expected_max_jitter = 0.1;
         let expected_min_jitter = 0.1;
-        let deltas = calculate_deltas(simple_durations).unwrap();
+        let deltas = calculate_deltas(&simple_durations).unwrap();
         println!("{:#?}", deltas.clone());
         let average_jitter = calculate_avg_jitter(deltas.clone());
         let median_jitter = calculate_median_jitter(deltas.clone());
@@ -836,7 +869,7 @@ mod calculate_rounded_jitter_tests {
         let expected_median_jitter = 0.156_542;
         let expected_max_jitter = 0.253_645;
         let expected_min_jitter = 0.009_501;
-        let deltas = calculate_deltas(irregular_durations).unwrap();
+        let deltas = calculate_deltas(&irregular_durations).unwrap();
         println!("{:#?}", deltas.clone());
         let average_jitter = calculate_avg_jitter(deltas.clone());
         let median_jitter = calculate_median_jitter(deltas.clone());
@@ -871,7 +904,7 @@ mod calculate_rounded_jitter_tests {
         let expected_median_jitter = 0.138_896;
         let expected_max_jitter = 0.253_645;
         let expected_min_jitter = 0.009_501;
-        let deltas = calculate_deltas(irregular_durations).unwrap();
+        let deltas = calculate_deltas(&irregular_durations).unwrap();
         println!("{:#?}", deltas.clone());
         let average_jitter = calculate_avg_jitter(deltas.clone());
         let median_jitter = calculate_median_jitter(deltas.clone());
@@ -944,7 +977,7 @@ pub fn get_jitter(
         min_interval,
         max_interval,
     )?;
-    let deltas = calculate_deltas(durations)?;
+    let deltas = calculate_deltas(&durations)?;
     match aggr_method {
         AggregationMethod::Average => Ok(calculate_avg_jitter(deltas)),
         AggregationMethod::Median => Ok(calculate_median_jitter(deltas)),
