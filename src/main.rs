@@ -18,6 +18,11 @@ The plugin can aggregate the deltas from multiple samples in the following ways:
 - max: the maximum of all deltas
 - min: the minimum of all deltas
 
+HOSTNAME
+
+If the hostname resolves to multiple IP addresses, the plugin will use the first
+address returned by the DNS resolver and skip the rest.
+
 SAMPLES
 
 The number of pings to send to the target host. Must be greater than 2.
