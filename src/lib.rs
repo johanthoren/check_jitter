@@ -4,7 +4,6 @@ use nagios_range::NagiosRange as ThresholdRange;
 use rand::Rng;
 use std::fmt;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, ToSocketAddrs};
-use std::thread;
 use std::time::{Duration, Instant};
 use thiserror::Error;
 
@@ -734,26 +733,39 @@ fn run_samples(
     socket_type: SocketType,
     samples: u8,
     timeout: Duration,
-    mut intervals: Vec<Duration>,
+    intervals: Vec<Duration>,
 ) -> Result<Vec<Duration>, CheckJitterError> {
     let ping_function = match socket_type {
         SocketType::Datagram => ping::dgramsock::ping,
         SocketType::Raw => ping::rawsock::ping,
     };
+
     let mut durations = Vec::<Duration>::with_capacity(samples as usize);
+    let mut intervals_iter = intervals.into_iter();
+    let mut next_ping_time = Instant::now();
+
     for i in 0..samples {
-        let start = Instant::now();
+        let now = Instant::now();
+
+        if now < next_ping_time {
+            let sleep_duration = next_ping_time - now;
+            std::thread::sleep(sleep_duration);
+        }
+
+        let start_time = Instant::now();
+
         match ping_function(ip, Some(timeout), None, None, None, None) {
             Ok(_) => {
-                let duration = start.elapsed();
+                let end_time = Instant::now();
+                let duration = end_time - start_time;
+                durations.push(duration);
                 debug!("Ping round {}, duration: {:?}", i + 1, duration);
 
-                durations.push(duration);
-
-                if let Some(interval) = intervals.pop() {
-                    debug!("Sleeping for {:?}...", interval);
-                    thread::sleep(interval);
-                };
+                if let Some(interval) = intervals_iter.next() {
+                    next_ping_time = end_time + interval;
+                } else {
+                    next_ping_time = end_time;
+                }
             }
             Err(e) => {
                 if let ping::Error::IoError { error } = &e {
@@ -773,6 +785,7 @@ fn run_samples(
             }
         };
     }
+
     debug!("Ping durations: {:?}", durations);
     Ok(durations)
 }
