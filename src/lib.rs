@@ -5,7 +5,7 @@ use rand::Rng;
 use std::fmt;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, ToSocketAddrs};
 use std::thread;
-use std::time::{Duration, SystemTime};
+use std::time::{Duration, Instant};
 use thiserror::Error;
 
 #[derive(Debug)]
@@ -742,17 +742,13 @@ fn run_samples(
     };
     let mut durations = Vec::<Duration>::with_capacity(samples as usize);
     for i in 0..samples {
-        let start = SystemTime::now();
-        debug!("Ping round {}, start time: {:?}", i + 1, start);
+        let start = Instant::now();
         match ping_function(ip, Some(timeout), None, None, None, None) {
             Ok(_) => {
-                let end = SystemTime::now();
-                debug!("Ping round {}, end time: {:?}", i + 1, end);
-
-                let duration = end.duration_since(start).unwrap();
+                let duration = start.elapsed();
                 debug!("Ping round {}, duration: {:?}", i + 1, duration);
 
-                durations.push(end.duration_since(start).unwrap());
+                durations.push(duration);
 
                 if let Some(interval) = intervals.pop() {
                     debug!("Sleeping for {:?}...", interval);
