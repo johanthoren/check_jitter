@@ -86,6 +86,9 @@ pub enum CheckJitterError {
     #[error("DNS Lookup failed for: {0}")]
     DnsLookupFailed(String),
 
+    #[error("DNS resolution error for '{addr}': {error}")]
+    DnsResolutionError { addr: String, error: String },
+
     #[error("The delta count is 0. Cannot calculate jitter.")]
     EmptyDeltas,
 
@@ -572,20 +575,158 @@ mod generate_intervals_tests {
     }
 }
 
-fn parse_addr(addr: &str) -> Result<IpAddr, CheckJitterError> {
-    let ip = if let Ok(ipv4) = addr.parse::<Ipv4Addr>() {
-        IpAddr::V4(ipv4)
-    } else if let Ok(ipv6) = addr.parse::<Ipv6Addr>() {
-        IpAddr::V6(ipv6)
-    } else {
-        // Perform DNS lookup
-        match (addr, 0).to_socket_addrs()?.next() {
-            Some(socket_addr) => socket_addr.ip(),
-            None => return Err(CheckJitterError::DnsLookupFailed(addr.to_string())),
+fn default_resolver(addr: &str) -> Result<Vec<IpAddr>, CheckJitterError> {
+    let addr_with_port = format!("{}:0", addr);
+    match addr_with_port.to_socket_addrs() {
+        Ok(addrs_iter) => {
+            let addrs: Vec<IpAddr> = addrs_iter.map(|sockaddr| sockaddr.ip()).collect();
+            if addrs.is_empty() {
+                Err(CheckJitterError::DnsLookupFailed(addr.to_string()))
+            } else {
+                Ok(addrs)
+            }
         }
-    };
+        Err(e) => Err(CheckJitterError::DnsResolutionError {
+            addr: addr.to_string(),
+            error: e.to_string(),
+        }),
+    }
+}
 
-    Ok(ip)
+fn parse_addr_with_resolver<F>(addr: &str, resolver: F) -> Result<Vec<IpAddr>, CheckJitterError>
+where
+    F: Fn(&str) -> Result<Vec<IpAddr>, CheckJitterError>,
+{
+    if let Ok(ipv4) = addr.parse::<Ipv4Addr>() {
+        return Ok(vec![IpAddr::V4(ipv4)]);
+    }
+    if let Ok(ipv6) = addr.parse::<Ipv6Addr>() {
+        return Ok(vec![IpAddr::V6(ipv6)]);
+    }
+
+    // If the address is not an IP address, perform DNS lookup using the provided resolver.
+    resolver(addr)
+}
+
+fn parse_addr(addr: &str) -> Result<Vec<IpAddr>, CheckJitterError> {
+    parse_addr_with_resolver(addr, default_resolver)
+}
+
+#[cfg(test)]
+mod parse_addr_tests {
+    use super::*;
+
+    fn mock_resolver(addr: &str) -> Result<Vec<IpAddr>, CheckJitterError> {
+        match addr {
+            "localhost" => Ok(vec![IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1))]),
+            "ipv6-localhost" => Ok(vec![IpAddr::V6(Ipv6Addr::LOCALHOST)]),
+            "multi.example.com" => Ok(vec![
+                IpAddr::V4(Ipv4Addr::new(192, 0, 2, 1)),
+                IpAddr::V4(Ipv4Addr::new(192, 0, 2, 2)),
+                IpAddr::V4(Ipv4Addr::new(192, 0, 2, 3)),
+            ]),
+            "unresolved.example.com" => Err(CheckJitterError::DnsLookupFailed(addr.to_string())),
+            "error.example.com" => Err(CheckJitterError::DnsResolutionError {
+                addr: addr.to_string(),
+                error: "mock error".to_string(),
+            }),
+            _ => Err(CheckJitterError::DnsResolutionError {
+                addr: addr.to_string(),
+                error: "unknown host".to_string(),
+            }),
+        }
+    }
+
+    #[test]
+    fn test_valid_ipv4_address() {
+        let addr = "192.168.1.1";
+        let result = parse_addr_with_resolver(addr, mock_resolver);
+        assert_eq!(result, Ok(vec![IpAddr::V4(Ipv4Addr::new(192, 168, 1, 1))]));
+    }
+
+    #[test]
+    fn test_valid_ipv6_address() {
+        let addr = "::1";
+        let result = parse_addr_with_resolver(addr, mock_resolver);
+        assert_eq!(result, Ok(vec![IpAddr::V6(Ipv6Addr::LOCALHOST)]));
+    }
+
+    #[test]
+    fn test_invalid_ip_address() {
+        let addr = "999.999.999.999";
+        let result = parse_addr_with_resolver(addr, mock_resolver);
+        assert_eq!(
+            result,
+            Err(CheckJitterError::DnsResolutionError {
+                addr: addr.to_string(),
+                error: "unknown host".to_string(),
+            })
+        );
+    }
+
+    #[test]
+    fn test_valid_hostname() {
+        let addr = "localhost";
+        let result = parse_addr_with_resolver(addr, mock_resolver);
+        assert_eq!(result, Ok(vec![IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1))]));
+    }
+
+    #[test]
+    fn test_valid_ipv6_hostname() {
+        let addr = "ipv6-localhost";
+        let result = parse_addr_with_resolver(addr, mock_resolver);
+        assert_eq!(result, Ok(vec![IpAddr::V6(Ipv6Addr::LOCALHOST)]));
+    }
+
+    #[test]
+    fn test_unresolved_hostname() {
+        let addr = "unresolved.example.com";
+        let result = parse_addr_with_resolver(addr, mock_resolver);
+        assert_eq!(
+            result,
+            Err(CheckJitterError::DnsLookupFailed(addr.to_string()))
+        );
+    }
+
+    #[test]
+    fn test_dns_resolution_error() {
+        let addr = "error.example.com";
+        let result = parse_addr_with_resolver(addr, mock_resolver);
+        assert_eq!(
+            result,
+            Err(CheckJitterError::DnsResolutionError {
+                addr: addr.to_string(),
+                error: "mock error".to_string(),
+            })
+        );
+    }
+
+    #[test]
+    fn test_unknown_hostname() {
+        let addr = "unknown.example.com";
+        let result = parse_addr_with_resolver(addr, mock_resolver);
+        assert_eq!(
+            result,
+            Err(CheckJitterError::DnsResolutionError {
+                addr: addr.to_string(),
+                error: "unknown host".to_string(),
+            })
+        );
+    }
+
+    #[test]
+    fn test_hostname_with_multiple_ips() {
+        let addr = "multi.example.com";
+        let result = parse_addr_with_resolver(addr, mock_resolver);
+        assert_eq!(
+            result,
+            Ok(vec![
+                IpAddr::V4(Ipv4Addr::new(192, 0, 2, 1)),
+                IpAddr::V4(Ipv4Addr::new(192, 0, 2, 2)),
+                IpAddr::V4(Ipv4Addr::new(192, 0, 2, 3)),
+            ])
+        )
+    }
 }
 
 fn run_samples(
@@ -648,7 +789,13 @@ fn get_durations(
     min_interval: u64,
     max_interval: u64,
 ) -> Result<Vec<Duration>, CheckJitterError> {
-    let ip = parse_addr(addr)?;
+    // NOTE: Only the first IP address from the list of resolved addresses will be used.
+    // TODO: This may change in the future if we decide to ping all resolved addresses by default
+    //       or provide an option to do so.
+    let ip = match parse_addr(addr)?.first() {
+        Some(ip) => *ip,
+        None => return Err(CheckJitterError::DnsLookupFailed(addr.to_string())),
+    };
 
     if samples < 2 {
         return Err(CheckJitterError::InsufficientSamples(samples));
